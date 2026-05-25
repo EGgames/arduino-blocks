@@ -1,5 +1,7 @@
-import React, { useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
+import React, { useEffect, useRef, useCallback, useState, forwardRef, useImperativeHandle } from 'react';
 import * as Blockly from 'blockly';
+import { BLOCK_DESCRIPTIONS } from '../blocks/blockDescriptions';
+import BlockInfoPanel from './BlockInfoPanel';
 import { blocks } from 'blockly/blocks';
 import { defineArduinoBlocks } from '../blocks/arduinoBlocks';
 import { arduinoGenerator, registerArduinoGenerators } from '../blocks/arduinoGenerator';
@@ -25,6 +27,7 @@ export default forwardRef(function BlockEditor({ onCodeChange }, ref) {
   const blocklyDiv   = useRef(null);
   const workspaceRef = useRef(null);
   const skipEmit     = useRef(false);   // true mientras cargamos XML externamente
+  const [selectedInfo, setSelectedInfo] = useState(null);
 
   // ── API pública expuesta al padre via ref ──────────────────────────────────
 
@@ -189,6 +192,20 @@ export default forwardRef(function BlockEditor({ onCodeChange }, ref) {
       }
     });
 
+    // Listener de selección de bloques → muestra panel informativo
+    workspace.addChangeListener((event) => {
+      if (event.type === Blockly.Events.SELECTED) {
+        if (event.newElementId) {
+          const block = workspace.getBlockById(event.newElementId);
+          if (block) {
+            setSelectedInfo(BLOCK_DESCRIPTIONS[block.type] ?? null);
+          }
+        } else {
+          setSelectedInfo(null);
+        }
+      }
+    });
+
     return () => {
       ro.disconnect();
       workspace.dispose();
@@ -212,9 +229,15 @@ export default forwardRef(function BlockEditor({ onCodeChange }, ref) {
   });
 
   return (
-    <div
-      ref={blocklyDiv}
-      style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
-    />
+    // Wrapper position:absolute para ocupar todo el panel izquierdo (igual que antes).
+    // Flex-column para que el div de Blockly se redimensione via flex y las
+    // coordenadas de clic del toolbox sean siempre correctas.
+    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column' }}>
+      <div
+        ref={blocklyDiv}
+        style={{ flex: 1, minHeight: 0 }}
+      />
+      {selectedInfo && <BlockInfoPanel info={selectedInfo} />}
+    </div>
   );
 });

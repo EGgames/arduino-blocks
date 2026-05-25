@@ -1,0 +1,227 @@
+name: Release — Build & Deploy
+
+on:
+  # Se dispara automáticamente cuando el workflow de CI termina con éxito en main
+  workflow_run:
+    workflows: ["CI — Unit + Integration + E2E Tests"]
+    branches: [main]
+    types: [completed]
+  # También se puede disparar manualmente desde GitHub → Actions
+  workflow_dispatch:
+
+jobs:
+  # ── Guard: solo continuar si CI pasó ────────────────────────────────────────
+  guard:
+    name: Verificar CI y obtener versión
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      sha:     ${{ steps.info.outputs.sha }}
+      version: ${{ steps.info.outputs.version }}
+      tag:     ${{ steps.info.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - id: info
+        run: |
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          VERSION=$(node -p "require('./package.json').version")
+          echo "sha=$SHA"         >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION"    >> $GITHUB_OUTPUT
+
+  # ── Web build → GitHub Pages ─────────────────────────────────────────────────
+  web:
+    name: Web → GitHub Pages
+    needs: guard
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.guard.outputs.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Build React app
+        run: npm run build
+        env:
+          CI: false                   # warnings no bloquean el build
+          GENERATE_SOURCEMAP: false
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/
+
+      - uses: actions/deploy-pages@v4
+        id: deploy
+
+  # ── Electron Linux (AppImage) ────────────────────────────────────────────────
+  electron-linux:
+    name: Electron — Linux
+    needs: guard
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.guard.outputs.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Instalar dependencias del sistema
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libgtk-3-dev libgbm-dev libnss3-dev libxss1 libasound2 \
+            rpm fakeroot dpkg
+
+      - run: npm ci
+
+      - name: Build React
+        run: npm run build
+        env:
+          CI: false
+          GENERATE_SOURCEMAP: false
+
+      - name: Package Electron (AppImage)
+        run: npx electron-builder --linux AppImage --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-linux
+          path: dist/*.AppImage
+          retention-days: 1
+
+  # ── Electron Windows (NSIS installer) ───────────────────────────────────────
+  electron-windows:
+    name: Electron — Windows
+    needs: guard
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.guard.outputs.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Build React
+        run: npm run build
+        env:
+          CI: "false"
+          GENERATE_SOURCEMAP: "false"
+
+      - name: Package Electron (NSIS)
+        run: npx electron-builder --win nsis --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-windows
+          path: dist/*.exe
+          retention-days: 1
+
+  # ── Electron macOS (DMG) ─────────────────────────────────────────────────────
+  electron-mac:
+    name: Electron — macOS
+    needs: guard
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.guard.outputs.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Build React
+        run: npm run build
+        env:
+          CI: false
+          GENERATE_SOURCEMAP: false
+
+      - name: Package Electron (DMG)
+        run: npx electron-builder --mac dmg --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-mac
+          path: dist/*.dmg
+          retention-days: 1
+
+  # ── GitHub Release con todos los binarios ────────────────────────────────────
+  release:
+    name: GitHub Release
+    needs: [guard, electron-linux, electron-windows, electron-mac]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Descargar todos los artefactos
+        uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          path: release-artifacts/
+          merge-multiple: true
+
+      - name: Listar artefactos
+        run: ls -lh release-artifacts/
+
+      - name: Crear GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.guard.outputs.tag }}
+          name: "Arduino Blocks ${{ needs.guard.outputs.version }}"
+          body: |
+            ## Arduino Blocks v${{ needs.guard.outputs.version }}
+
+            IDE de programación visual por bloques para Arduino.
+
+            ### 📥 Descargas
+
+            | Plataforma | Formato |
+            |-----------|---------|
+            | 🪟 Windows | Instalador `.exe` (NSIS) |
+            | 🐧 Linux | `.AppImage` portable — `chmod +x` y ejecutar |
+            | 🍎 macOS | Imagen de disco `.dmg` |
+            | 🌐 Web | Ver pestaña **Environments → github-pages** |
+
+            > ⚠️ **Advertencia de seguridad (app sin firma de código)**
+            > - **macOS**: clic derecho → *Abrir* → confirmar
+            > - **Windows**: *Más información* → *Ejecutar de todas formas*
+          files: release-artifacts/*
+          generate_release_notes: true
+          make_latest: true
+          fail_on_unmatched_files: false

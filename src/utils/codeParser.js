@@ -218,7 +218,7 @@ class Parser {
         if (depth > 0) paramTokens.push(this.peek().value);
         this.consume();
       }
-      const params = paramTokens.join(' ').replace(/ ([,\[\]])/g, '$1').trim();
+      const params = paramTokens.join(' ').replace(/ ([,[\]])/g, '$1').trim();
       if (this.match('LBRACE')) {
         this.consume(); // {
         const body = this.parseBlock();
