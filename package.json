@@ -1,6 +1,6 @@
 {
   "name": "arduino-blocks",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Programación por bloques para Arduino",
   "author": "Arduino Blocks",
   "main": "electron/main.js",
@@ -11,6 +11,8 @@
     "electron": "electron .",
     "electron-dev": "concurrently \"cross-env BROWSER=none GENERATE_SOURCEMAP=false npm start\" \"wait-on http://localhost:3000 && electron .\"",
     "electron-build": "npm run build && electron-builder",
+    "preelectron-build": "node scripts/download-arduino-cli.js",
+    "download-cli": "node scripts/download-arduino-cli.js",
     "test": "react-scripts test"
   },
   "dependencies": {
@@ -48,13 +50,16 @@
       "output": "dist"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "extraResources": [{ "from": "tools/win/", "to": "tools/", "filter": ["**/*"] }]
     },
     "mac": {
-      "target": "dmg"
+      "target": "dmg",
+      "extraResources": [{ "from": "tools/mac/", "to": "tools/", "filter": ["**/*"] }]
     },
     "linux": {
-      "target": "AppImage"
+      "target": "AppImage",
+      "extraResources": [{ "from": "tools/linux/", "to": "tools/", "filter": ["**/*"] }]
     }
   },
   "browserslist": {

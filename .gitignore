@@ -27,6 +27,9 @@ e2e/*.txt
 # ── Electron builder output ───────────────────────────────────
 out/
 
+# ── Binarios de arduino-cli (descargados con npm run download-cli) ──
+tools/
+
 # ── IDEs ──────────────────────────────────────────────────────
 .idea/
 *.iml
