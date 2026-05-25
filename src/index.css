@@ -1,0 +1,134 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Blockly workspace ──────────────────────────────────────────────────── */
+.blocklyMainBackground {
+  fill: #f7f9fc !important;
+}
+.blocklyGrid > line {
+  stroke: #dce4ef !important;
+}
+
+/* Tema oscuro: fondo del workspace y flyout */
+html[data-theme="dark"] .blocklyMainBackground {
+  fill: #1a2335 !important;
+}
+html[data-theme="dark"] .blocklyGrid > line {
+  stroke: rgba(255,255,255,0.06) !important;
+}
+html[data-theme="dark"] .blocklyFlyoutBackground {
+  fill: #232f45 !important;
+  fill-opacity: 0.98 !important;
+}
+
+/* ── Blockly Toolbox — dark sidebar ─────────────────────────────────────── */
+.blocklyToolboxDiv {
+  background: #1e2535 !important;
+  border-right: 1px solid rgba(255,255,255,0.07) !important;
+  box-shadow: 3px 0 12px rgba(0,0,0,0.28) !important;
+}
+.blocklyTreeLabel {
+  color: #c8d4e3 !important;
+  font-size: 13px !important;
+  font-family: 'Segoe UI', sans-serif !important;
+}
+.blocklyTreeRow {
+  padding: 5px 10px !important;
+  transition: background 0.15s ease !important;
+  border-left: 3px solid transparent !important;
+}
+.blocklyTreeRow:not(.blocklyTreeSelected):hover {
+  background: rgba(255,255,255,0.08) !important;
+  border-left-color: rgba(255,255,255,0.2) !important;
+}
+.blocklyTreeSelected > .blocklyTreeRow,
+.blocklyTreeRow.blocklyTreeSelected {
+  background: linear-gradient(90deg, #005fa3 0%, #0073c6 100%) !important;
+  border-left-color: #4fc3f7 !important;
+}
+.blocklyTreeSelected .blocklyTreeLabel {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+/* Icons in toolbox */
+.blocklyTreeIconClosed,
+.blocklyTreeIconOpen {
+  filter: brightness(1.8) !important;
+}
+
+/* ── Flyout ──────────────────────────────────────────────────────────────── */
+.blocklyFlyoutBackground {
+  fill: #eef3f9 !important;
+  fill-opacity: 0.98 !important;
+}
+
+/* ── Blockly scrollbars ──────────────────────────────────────────────────── */
+.blocklyScrollbarBackground { fill: transparent !important; }
+.blocklyScrollbarKnob { fill: #aab8c9 !important; }
+.blocklyScrollbarKnob:hover { fill: #7d97b5 !important; }
+
+/* ── Light-area scrollbars (panels) ─────────────────────────────────────── */
+.light-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.light-scroll::-webkit-scrollbar-track { background: transparent; }
+.light-scroll::-webkit-scrollbar-thumb { background: #c5cdd9; border-radius: 3px; }
+.light-scroll::-webkit-scrollbar-thumb:hover { background: #8fa0b5; }
+
+/* ── Dark-area scrollbars (Monaco) ──────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #1e1e1e; }
+::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #777; }
+
+/* ── Animations ─────────────────────────────────────────────────────────── */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Light theme overrides (data-theme="light" on <html>) ──────────────── */
+html[data-theme="light"] .blocklyToolboxDiv {
+  background: #f0f4f8 !important;
+  border-right-color: #d0d8e8 !important;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.08) !important;
+}
+html[data-theme="light"] .blocklyTreeLabel {
+  color: #2d3748 !important;
+}
+html[data-theme="light"] .blocklyTreeRow:not(.blocklyTreeSelected):hover {
+  background: rgba(0,0,0,0.05) !important;
+  border-left-color: rgba(0,0,0,0.15) !important;
+}
+html[data-theme="light"] .blocklyTreeSelected > .blocklyTreeRow,
+html[data-theme="light"] .blocklyTreeRow.blocklyTreeSelected {
+  background: linear-gradient(90deg, #00529b 0%, #0077cc 100%) !important;
+  border-left-color: #0099dd !important;
+}
+html[data-theme="light"] .blocklyTreeSelected .blocklyTreeLabel {
+  color: #fff !important;
+}
+html[data-theme="light"] .blocklyMainBackground {
+  fill: #ffffff !important;
+}
+html[data-theme="light"] .blocklyGrid > line {
+  stroke: #e2e8f0 !important;
+}
+html[data-theme="light"] .blocklyFlyoutBackground {
+  fill: #f5f8ff !important;
+}
+html[data-theme="light"] .blocklyTreeIconClosed,
+html[data-theme="light"] .blocklyTreeIconOpen {
+  filter: brightness(0.3) !important;
+}
