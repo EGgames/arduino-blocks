@@ -2,6 +2,7 @@
   "name": "arduino-blocks",
   "version": "1.0.0",
   "description": "Programación por bloques para Arduino",
+  "author": "Arduino Blocks",
   "main": "electron/main.js",
   "homepage": "./",
   "scripts": {
@@ -38,10 +39,10 @@
   "build": {
     "appId": "com.arduinoblocks.app",
     "productName": "Arduino Blocks",
+    "extends": null,
     "files": [
       "build/**/*",
-      "electron/**/*",
-      "node_modules/**/*"
+      "electron/**/*"
     ],
     "directories": {
       "output": "dist"
