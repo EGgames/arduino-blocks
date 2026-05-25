@@ -23,7 +23,7 @@ jobs:
           cache: "npm"
 
       - name: Install Node.js dependencies
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: npm install --omit=optional --no-audit --no-fund
 
       - name: Run Jest tests with coverage
         run: npm test -- --coverage --watchAll=false --ci
@@ -62,7 +62,7 @@ jobs:
           cache: "maven"
 
       - name: Install Node.js dependencies
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: npm install --omit=optional --no-audit --no-fund
 
       - name: Start React development server
         run: |

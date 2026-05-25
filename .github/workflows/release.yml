@@ -45,7 +45,7 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm install --omit=optional --no-audit --no-fund
 
       - name: Build React app
         run: npm run build
@@ -84,7 +84,7 @@ jobs:
             libgtk-3-dev libgbm-dev libnss3-dev libxss1 libasound2 \
             libudev-dev rpm fakeroot dpkg
 
-      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm install --omit=optional --no-audit --no-fund
 
       - name: Build React
         run: npm run build
@@ -118,7 +118,7 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm install --omit=optional --no-audit --no-fund
 
       - name: Build React
         run: npm run build
@@ -152,7 +152,7 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm install --omit=optional --no-audit --no-fund
 
       - name: Build React
         run: npm run build
