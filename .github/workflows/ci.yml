@@ -105,3 +105,20 @@ jobs:
           name: serenity-screenshots
           path: e2e/target/site/serenity/screenshots/
           retention-days: 7
+
+  # ── Disparar Release (solo en main, después de todos los tests) ─────────────
+  trigger-release:
+    name: Disparar workflow de Release
+    needs: [unit-integration, e2e]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      actions: write
+    steps:
+      - name: Dispatch release workflow
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/release.yml/dispatches" \
+            -d '{"ref":"main"}'

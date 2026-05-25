@@ -1,21 +1,13 @@
 name: Release — Build & Deploy
 
 on:
-  # Se dispara automáticamente cuando el workflow de CI termina con éxito en main
-  workflow_run:
-    workflows: ["CI — Unit + Integration + E2E Tests"]
-    branches: [main]
-    types: [completed]
-  # También se puede disparar manualmente desde GitHub → Actions
+  # Disparado por el job trigger-release en ci.yml cuando todos los tests pasan en main
   workflow_dispatch:
 
 jobs:
   # ── Guard: solo continuar si CI pasó ────────────────────────────────────────
   guard:
     name: Verificar CI y obtener versión
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     outputs:
       sha:     ${{ steps.info.outputs.sha }}
@@ -23,12 +15,10 @@ jobs:
       tag:     ${{ steps.info.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - id: info
         run: |
-          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          SHA="${{ github.sha }}"
           VERSION=$(node -p "require('./package.json').version")
           echo "sha=$SHA"         >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
