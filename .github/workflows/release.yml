@@ -154,6 +154,9 @@ jobs:
 
       - run: npm install --omit=optional --no-audit --no-fund
 
+      - name: Instalar dmg-license (dep opcional de electron-builder necesaria para DMG)
+        run: npm install dmg-license --no-save --no-audit --no-fund
+
       - name: Build React
         run: npm run build
         env:
