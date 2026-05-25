@@ -42,10 +42,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "22"
           cache: "npm"
 
-      - run: npm ci
+      - run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Build React app
         run: npm run build
@@ -74,7 +74,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "22"
           cache: "npm"
 
       - name: Instalar dependencias del sistema
@@ -84,7 +84,7 @@ jobs:
             libgtk-3-dev libgbm-dev libnss3-dev libxss1 libasound2 \
             libudev-dev rpm fakeroot dpkg
 
-      - run: npm ci
+      - run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Build React
         run: npm run build
@@ -115,10 +115,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "22"
           cache: "npm"
 
-      - run: npm ci
+      - run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Build React
         run: npm run build
@@ -149,10 +149,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "22"
           cache: "npm"
 
-      - run: npm ci
+      - run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Build React
         run: npm run build
