@@ -38,6 +38,16 @@ export class ArduinoGenerator extends Blockly.Generator {
       return '// Agrega el bloque "Setup/Loop" para comenzar\n';
     }
 
+    // 0. #define directivas (antes de #include)
+    let definesCode = '';
+    for (const b of workspace.getBlocksByType('arduino_define')) {
+      if (b.getSurroundParent()) continue;
+      const name  = b.getFieldValue('NAME')  || 'MI_DEFINE';
+      const value = b.getFieldValue('VALUE') || '';
+      definesCode += value.trim() ? `#define ${name} ${value}\n` : `#define ${name}\n`;
+    }
+    if (definesCode) definesCode += '\n';
+
     // 1. #include directivas (solo bloques flotantes)
     let includesCode = '';
     for (const b of workspace.getBlocksByType('arduino_include')) {
@@ -91,6 +101,7 @@ export class ArduinoGenerator extends Blockly.Generator {
     }
 
     let code = '';
+    code += definesCode;
     code += includesCode;
     code += globalsCode;
     code += functionsCode;
@@ -182,6 +193,10 @@ export function registerArduinoGenerators(gen) {
     return ['millis()', gen.ORDER_ATOMIC];
   };
 
+  fb['arduino_micros'] = function () {
+    return ['micros()', gen.ORDER_ATOMIC];
+  };
+
   // ── Serial ────────────────────────────────────────────────────────────
 
   fb['arduino_serial_begin'] = function (block) {
@@ -194,6 +209,14 @@ export function registerArduinoGenerators(gen) {
 
   fb['arduino_serial_print'] = function (block) {
     return `Serial.print(${gen.valueToCode(block, 'TEXT', gen.ORDER_NONE) || '""'});\n`;
+  };
+
+  fb['arduino_serial_available'] = function () {
+    return ['Serial.available()', gen.ORDER_ATOMIC];
+  };
+
+  fb['arduino_serial_read'] = function () {
+    return ['Serial.read()', gen.ORDER_ATOMIC];
   };
 
   // ── Variables ─────────────────────────────────────────────────────────
@@ -234,6 +257,12 @@ export function registerArduinoGenerators(gen) {
   // ── #include (flotante, recogido por workspaceToCode) ────────────────
 
   fb['arduino_include'] = function (_block) {
+    return '';
+  };
+
+  // ── #define (flotante, recogido por workspaceToCode) ─────────────────
+
+  fb['arduino_define'] = function (_block) {
     return '';
   };
 
@@ -297,6 +326,14 @@ export function registerArduinoGenerators(gen) {
     const condition = gen.valueToCode(block, 'CONDITION', gen.ORDER_NONE) || 'true';
     const body      = gen.statementToCode(block, 'DO');
     return `do {\n${body}} while (${condition});\n`;
+  };
+
+  fb['arduino_break'] = function () {
+    return 'break;\n';
+  };
+
+  fb['arduino_continue'] = function () {
+    return 'continue;\n';
   };
 
   fb['arduino_switch_case'] = function (block) {

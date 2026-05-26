@@ -18,6 +18,7 @@ import UploadPanel from './UploadPanel';
 import LibraryPanel from './LibraryPanel';
 import CustomBlocksPanel from './CustomBlocksPanel';
 import SettingsDialog from './SettingsDialog';
+import UpdaterDialog from './UpdaterDialog';
 import { codeToXML } from '../utils/xmlGenerator';
 import { useBidirectionalSync } from '../hooks/useBidirectionalSync';
 import { useSettings } from '../hooks/useSettings';
@@ -337,6 +338,9 @@ export default function App() {
         settings={settings}
         onSettingsChange={setSettings}
       />
+
+      {/* Actualizaciones automáticas vía GitHub Releases */}
+      <UpdaterDialog />
 
       {/* Snackbar */}
       <Snackbar

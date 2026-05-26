@@ -632,4 +632,68 @@ export function defineArduinoBlocks() {
       this.setTooltip('Asigna un valor a la posición indicada del array');
     },
   };
+
+  // ── #define ────────────────────────────────────
+  Blockly.Blocks['arduino_define'] = {
+    init() {
+      this.appendDummyInput()
+        .appendField('#define')
+        .appendField(new Blockly.FieldTextInput('MI_DEFINE'), 'NAME')
+        .appendField(new Blockly.FieldTextInput('13'), 'VALUE');
+      this.setColour(200);
+      this.setTooltip('Define una macro de preprocesador. Arrastra fuera del Setup/Loop para que quede al inicio del sketch');
+    },
+  };
+
+  // ── break ──────────────────────────────────────
+  Blockly.Blocks['arduino_break'] = {
+    init() {
+      this.appendDummyInput().appendField('break');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(120);
+      this.setTooltip('Sale del bucle o switch actual');
+    },
+  };
+
+  // ── continue ───────────────────────────────────
+  Blockly.Blocks['arduino_continue'] = {
+    init() {
+      this.appendDummyInput().appendField('continue');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(120);
+      this.setTooltip('Salta a la siguiente iteración del bucle');
+    },
+  };
+
+  // ── Serial.available ───────────────────────────
+  Blockly.Blocks['arduino_serial_available'] = {
+    init() {
+      this.appendDummyInput().appendField('Serial.available()');
+      this.setOutput(true, 'Number');
+      this.setColour(65);
+      this.setTooltip('Retorna el número de bytes disponibles para leer del Serial');
+    },
+  };
+
+  // ── Serial.read ────────────────────────────────
+  Blockly.Blocks['arduino_serial_read'] = {
+    init() {
+      this.appendDummyInput().appendField('Serial.read()');
+      this.setOutput(true, 'Number');
+      this.setColour(65);
+      this.setTooltip('Lee el primer byte disponible del Serial (-1 si no hay datos)');
+    },
+  };
+
+  // ── micros ─────────────────────────────────────
+  Blockly.Blocks['arduino_micros'] = {
+    init() {
+      this.appendDummyInput().appendField('micros()');
+      this.setOutput(true, 'Number');
+      this.setColour(120);
+      this.setTooltip('Retorna el tiempo en microsegundos desde el inicio');
+    },
+  };
 }

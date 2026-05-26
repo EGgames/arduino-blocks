@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const { exec, spawn, execSync } = require('child_process');
 const fs = require('fs');
@@ -31,7 +32,10 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+  setupAutoUpdater();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
@@ -354,4 +358,82 @@ ipcMain.handle('install-platform', async (_event, { platform }) => {
       resolve({ success: !err, output: stdout + stderr });
     });
   });
+});
+
+// ──────────────────────────────────────────────
+// Auto-Updater (GitHub Releases)
+// ──────────────────────────────────────────────
+
+function setupAutoUpdater() {
+  if (isDev) return;
+
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('checking-for-update', () => {
+    mainWindow?.webContents.send('update-checking');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    mainWindow?.webContents.send('update-available', {
+      version: info.version,
+      releaseNotes: info.releaseNotes || '',
+      releaseDate: info.releaseDate || '',
+    });
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    mainWindow?.webContents.send('update-not-available');
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    mainWindow?.webContents.send('update-download-progress', {
+      percent: Math.round(progress.percent),
+      transferred: progress.transferred,
+      total: progress.total,
+      bytesPerSecond: progress.bytesPerSecond,
+    });
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    mainWindow?.webContents.send('update-downloaded', {
+      version: info.version,
+      releaseNotes: info.releaseNotes || '',
+    });
+  });
+
+  autoUpdater.on('error', (err) => {
+    mainWindow?.webContents.send('update-error', err.message);
+  });
+
+  // Buscar actualizaciones al iniciar (5 segundos después de que la ventana esté lista)
+  setTimeout(() => {
+    autoUpdater.checkForUpdates().catch(() => {});
+  }, 5000);
+}
+
+// IPC: Buscar actualización manualmente
+ipcMain.handle('check-for-updates', async () => {
+  if (isDev) return { checking: false, dev: true };
+  try {
+    await autoUpdater.checkForUpdates();
+    return { checking: true };
+  } catch (err) {
+    return { checking: false, error: err.message };
+  }
+});
+
+// IPC: Iniciar descarga de la actualización
+ipcMain.handle('download-update', async () => {
+  try {
+    autoUpdater.downloadUpdate();
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// IPC: Instalar y reiniciar
+ipcMain.handle('install-update', () => {
+  autoUpdater.quitAndInstall(false, true);
 });

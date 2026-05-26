@@ -8,6 +8,7 @@ export const toolboxConfig = {
       contents: [
         { kind: 'block', type: 'arduino_setup_loop' },
         { kind: 'block', type: 'arduino_comment' },
+        { kind: 'block', type: 'arduino_define', fields: { NAME: 'LED_BUILTIN', VALUE: '13' } },
         { kind: 'block', type: 'arduino_include', fields: { LIB: 'Wire' } },
       ],
     },
@@ -70,6 +71,7 @@ export const toolboxConfig = {
           },
         },
         { kind: 'block', type: 'arduino_millis' },
+        { kind: 'block', type: 'arduino_micros' },
       ],
     },
     {
@@ -96,6 +98,8 @@ export const toolboxConfig = {
             TEXT: { block: { type: 'text', fields: { TEXT: 'valor: ' } } },
           },
         },
+        { kind: 'block', type: 'arduino_serial_available' },
+        { kind: 'block', type: 'arduino_serial_read' },
       ],
     },
     {
@@ -109,6 +113,8 @@ export const toolboxConfig = {
         { kind: 'block', type: 'arduino_while' },
         { kind: 'block', type: 'arduino_do_while' },
         { kind: 'block', type: 'arduino_switch_case' },
+        { kind: 'block', type: 'arduino_break' },
+        { kind: 'block', type: 'arduino_continue' },
       ],
     },
     {
