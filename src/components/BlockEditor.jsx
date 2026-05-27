@@ -37,6 +37,23 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
   const modeRef      = useRef(mode);    // ref para acceder al modo actual dentro de callbacks
   const [selectedInfo, setSelectedInfo] = useState(null);
 
+  // Ref para acceder al valor actualizado de isMobile dentro de closures estables
+  const isMobileRef  = useRef(isMobile);
+  useEffect(() => { isMobileRef.current = isMobile; }, [isMobile]);
+
+  // En mobile: usar solo el emoji como nombre de categoría → toolbox ~50px vs ~200px
+  const toMobileToolbox = useCallback((config) => {
+    if (!isMobileRef.current) return config;
+    return {
+      ...config,
+      contents: config.contents.map(item =>
+        item.kind === 'category' && item.name && item.name.charCodeAt(0) > 127
+          ? { ...item, name: [...item.name][0] }   // primer carácter = emoji
+          : item
+      ),
+    };
+  }, []);
+
   // Sincronizar modeRef: guardar workspace actual, cargar el nuevo y cambiar tema
   useEffect(() => {
     const ws = workspaceRef.current;
@@ -77,7 +94,7 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
     // Actualizar toolbox
     const baseConfig = mode === 'kids' ? kidsToolboxConfig : toolboxConfig;
     try {
-      ws.updateToolbox(baseConfig);
+      ws.updateToolbox(toMobileToolbox(baseConfig));
     } catch (e) {
       console.warn('[BlockEditor] Error actualizando toolbox por modo:', e);
     }
@@ -153,7 +170,7 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
         : [...baseConfig.contents];
 
       try {
-        ws.updateToolbox({ ...baseConfig, contents: newContents });
+        ws.updateToolbox(toMobileToolbox({ ...baseConfig, contents: newContents }));
       } catch (e) {
         console.warn('[BlockEditor] Error actualizando toolbox:', e);
       }
@@ -236,7 +253,7 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
       : (isKids ? 1.0 : 0.85);
 
     const workspace = Blockly.inject(blocklyDiv.current, {
-      toolbox: isKids ? kidsToolboxConfig : toolboxConfig,
+      toolbox: toMobileToolbox(isKids ? kidsToolboxConfig : toolboxConfig),
       grid: { spacing: isKids ? 30 : 20, length: 3, colour: isKids ? '#b3d9ff' : '#ccc', snap: true },
       zoom: { controls: true, wheel: true, pinch: true, startScale, maxScale: 4, minScale: 0.3 },
       move: { scrollbars: true, drag: true, wheel: true },

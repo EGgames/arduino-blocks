@@ -166,10 +166,12 @@ export default function App() {
         transition: 'background 0.4s ease',
       }}>
         <Toolbar variant="dense" sx={{ gap: 1, minHeight: 44 }}>
-          <IconButton color="inherit" edge="start" onClick={() => setSidebarOpen((v) => !v)} size="small"
-            sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }, borderRadius: 1 }}>
-            <MenuIcon />
-          </IconButton>
+          {!isMobile && (
+            <IconButton color="inherit" edge="start" onClick={() => setSidebarOpen((v) => !v)} size="small"
+              sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }, borderRadius: 1 }}>
+              <MenuIcon />
+            </IconButton>
+          )}
 
           {/* Logo + branding */}
           <Box sx={{
@@ -198,15 +200,22 @@ export default function App() {
           <Divider orientation="vertical" flexItem sx={{ bgcolor: 'rgba(255,255,255,0.3)' }} />
 
           {settings.mode !== 'kids' && (
-            <Tooltip title="Guardar codigo (.ino) [Ctrl+S]">
-              <Button color="inherit" startIcon={<SaveIcon />} size="small" onClick={handleSave}
-                sx={{ borderRadius: 1.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' }, fontSize: 12 }}>
-                Guardar
-              </Button>
+            <Tooltip title="Guardar código (.ino) [Ctrl+S]">
+              {isMobile ? (
+                <IconButton color="inherit" size="small" onClick={handleSave}
+                  sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' } }}>
+                  <SaveIcon fontSize="small" />
+                </IconButton>
+              ) : (
+                <Button color="inherit" startIcon={<SaveIcon />} size="small" onClick={handleSave}
+                  sx={{ borderRadius: 1.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' }, fontSize: 12 }}>
+                  Guardar
+                </Button>
+              )}
             </Tooltip>
           )}
 
-          {settings.mode === 'kids' && (
+          {settings.mode === 'kids' && !isMobile && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mx: 1 }}>
               {['1️⃣ Arrastra bloques', '2️⃣ Conecta tu Arduino', '3️⃣ Presiona Subir'].map((step) => (
                 <Typography key={step} sx={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.9)', letterSpacing: 0.3 }}>
@@ -228,14 +237,21 @@ export default function App() {
 
           {settings.mode === 'kids' && (
             <Tooltip title="Guardar mi programa [Ctrl+S]">
-              <Button color="inherit" startIcon={<SaveIcon />} size="small" onClick={handleSave}
-                sx={{ borderRadius: 2, bgcolor: 'rgba(255,255,255,0.15)', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' }, fontSize: 12, mr: 1 }}>
-                Guardar
-              </Button>
+              {isMobile ? (
+                <IconButton color="inherit" size="small" onClick={handleSave}
+                  sx={{ bgcolor: 'rgba(255,255,255,0.15)', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' }, mr: 0.5 }}>
+                  <SaveIcon fontSize="small" />
+                </IconButton>
+              ) : (
+                <Button color="inherit" startIcon={<SaveIcon />} size="small" onClick={handleSave}
+                  sx={{ borderRadius: 2, bgcolor: 'rgba(255,255,255,0.15)', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' }, fontSize: 12, mr: 1 }}>
+                  Guardar
+                </Button>
+              )}
             </Tooltip>
           )}
 
-          {settings.mode !== 'kids' && (
+          {settings.mode !== 'kids' && !isMobile && (
             <Tooltip title={isElectron ? 'Modo escritorio' : 'Solo edicion bloques/codigo'}>
               <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', mr: 1, fontSize: 11 }}>
                 {isElectron ? 'Electron' : 'Web'}
