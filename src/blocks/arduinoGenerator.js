@@ -9,6 +9,9 @@ export class ArduinoGenerator extends Blockly.Generator {
     super('Arduino');
     this.INDENT = '  ';
 
+    // Set de tipos de bloque de librería que generan declaraciones globales
+    this._globalLibraryBlockTypes = new Set();
+
     // Precedencias de operadores
     this.ORDER_ATOMIC = 0;
     this.ORDER_UNARY_POSTFIX = 1;
@@ -82,6 +85,19 @@ export class ArduinoGenerator extends Blockly.Generator {
     }
     if (globalsCode) globalsCode += '\n';
 
+    // 3b. Declaraciones de objetos de librería (bloques globales flotantes)
+    let libGlobalsCode = '';
+    for (const type of this._globalLibraryBlockTypes) {
+      for (const b of workspace.getBlocksByType(type)) {
+        if (b.getSurroundParent()) continue;
+        const code = this.blockToCode(b);
+        if (typeof code === 'string' && code.trim()) {
+          libGlobalsCode += code.trim() + '\n';
+        }
+      }
+    }
+    if (libGlobalsCode) libGlobalsCode += '\n';
+
     // 3. Funciones personalizadas (aparecen antes de setup/loop)
     let functionsCode = '';
     for (const fb of functionDefBlocks) {
@@ -104,6 +120,7 @@ export class ArduinoGenerator extends Blockly.Generator {
     code += definesCode;
     code += includesCode;
     code += globalsCode;
+    code += libGlobalsCode;
     code += functionsCode;
     code += 'void setup() {\n';
     code += setupCode || this.INDENT + '// setup vacío\n';
@@ -113,6 +130,11 @@ export class ArduinoGenerator extends Blockly.Generator {
     code += '}\n';
 
     return code;
+  }
+
+  /** Registra un tipo de bloque de librería para ser recogido como declaración global */
+  addGlobalLibraryBlockType(type) {
+    this._globalLibraryBlockTypes.add(type);
   }
 
   // CRITICAL: override scrub_() para encadenar bloques en secuencia.

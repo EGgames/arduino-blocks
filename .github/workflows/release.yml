@@ -100,7 +100,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: dist-linux
-          path: dist/*.AppImage
+          path: |
+            dist/*.AppImage
+            dist/latest-linux.yml
           retention-days: 1
 
   # ── Electron Windows (NSIS installer) ───────────────────────────────────────
@@ -134,7 +136,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: dist-windows
-          path: dist/*.exe
+          path: |
+            dist/*.exe
+            dist/latest.yml
           retention-days: 1
 
   # ── Electron macOS (DMG) ─────────────────────────────────────────────────────
@@ -171,7 +175,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: dist-mac
-          path: dist/*.dmg
+          path: |
+            dist/*.dmg
+            dist/latest-mac.yml
           retention-days: 1
 
   # ── GitHub Release con todos los binarios ────────────────────────────────────

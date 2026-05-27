@@ -61,6 +61,11 @@ export default function App() {
   const { syncStatus, handleBlockCodeChange, handleCodeEditorChange, parseAndUpdateBlocks } =
     useBidirectionalSync(blockEditorRef, setCode);
 
+  // Actualizar toolbox cuando cambian las librerías activas
+  useEffect(() => {
+    blockEditorRef.current?.updateToolboxForLibraries(activeIncludes);
+  }, [activeIncludes]);
+
   // Guardar
   const handleSave = useCallback(async () => {
     if (isElectron) {
@@ -373,7 +378,7 @@ export default function App() {
         </Box>
         <Box sx={{ flex: 1 }} />
         <Typography sx={{ fontSize: 'inherit', color: 'inherit', opacity: 0.4 }}>
-          Arduino Blocks IDE
+          Arduino Blocks IDE v1.0.3-alpha
         </Typography>
       </Box>
     </Box>

@@ -6,6 +6,7 @@ import { blocks } from 'blockly/blocks';
 import { defineArduinoBlocks } from '../blocks/arduinoBlocks';
 import { arduinoGenerator, registerArduinoGenerators } from '../blocks/arduinoGenerator';
 import { toolboxConfig } from '../blocks/toolbox';
+import { registerLibraryBlocks, buildLibraryToolboxCategory, buildFallbackLibraryToolboxCategory } from '../blocks/libraryBlocks';
 import { INITIAL_XML } from '../config/initialWorkspace';
 
 const LS_KEY = 'arduino-blocks-workspace';
@@ -69,6 +70,38 @@ export default forwardRef(function BlockEditor({ onCodeChange }, ref) {
     getCode() {
       if (!workspaceRef.current) return '';
       try { return arduinoGenerator.workspaceToCode(workspaceRef.current); } catch { return ''; }
+    },
+
+    /**
+     * Actualiza el toolbox añadiendo/quitando categorías de librerías según las
+     * que estén activas en el workspace (#include presentes).
+     * @param {string[]} libs - nombres de librerías actualmente incluidas
+     */
+    updateToolboxForLibraries(libs) {
+      const ws = workspaceRef.current;
+      if (!ws) return;
+
+      const uniqueLibs = [...new Set(libs)];
+
+      // Registrar bloques Blockly para librerías que tengan definición
+      for (const lib of uniqueLibs) {
+        registerLibraryBlocks(lib, arduinoGenerator);
+      }
+
+      // Construir categorías de librería (predefinidas o fallback genérico)
+      const libCategories = uniqueLibs
+        .map((lib) => buildLibraryToolboxCategory(lib) ?? buildFallbackLibraryToolboxCategory(lib, arduinoGenerator))
+        .filter(Boolean);
+
+      const newContents = libCategories.length > 0
+        ? [...toolboxConfig.contents, { kind: 'sep' }, ...libCategories]
+        : [...toolboxConfig.contents];
+
+      try {
+        ws.updateToolbox({ ...toolboxConfig, contents: newContents });
+      } catch (e) {
+        console.warn('[BlockEditor] Error actualizando toolbox:', e);
+      }
     },
 
     /**
