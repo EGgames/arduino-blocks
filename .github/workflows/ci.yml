@@ -2,9 +2,9 @@ name: CI — Unit + Integration + E2E Tests
 
 on:
   push:
-    branches: ["**"]
+    branches-ignore: ["gh-pages"]
   pull_request:
-    branches: ["**"]
+    branches-ignore: ["gh-pages"]
 
 jobs:
   # ── Unit & Integration Tests (Jest) ────────────────────────────────────────
