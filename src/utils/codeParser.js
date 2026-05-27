@@ -37,7 +37,7 @@ function tokenize(code) {
       continue;
     }
 
-    // Directiva preprocesador → capturar #include, descartar el resto
+    // Directiva preprocesador → capturar #include y #define, descartar el resto
     if (code[i] === '#') {
       let directive = '';
       i++; // saltar #
@@ -46,10 +46,15 @@ function tokenize(code) {
       // Capturar: #include <lib.h> o #include "lib.h"
       const m = directive.match(/^include\s+[<"]([^>"]+)[>"]$/);
       if (m) {
-        // Extraer nombre sin extensión .h
         const libFull = m[1];
         const libName = libFull.endsWith('.h') ? libFull.slice(0, -2) : libFull;
         tokens.push({ type: 'INCLUDE', value: libName });
+        continue;
+      }
+      // Capturar: #define NAME [VALUE]
+      const defM = directive.match(/^define\s+(\w+)(?:\s+(.+))?$/);
+      if (defM) {
+        tokens.push({ type: 'DEFINE', name: defM[1], value: (defM[2] || '').trim() });
       }
       continue;
     }
@@ -168,6 +173,12 @@ class Parser {
         includes.push(this.consume().value);
         continue;
       }
+      // Directiva #define
+      if (this.match('DEFINE')) {
+        const t = this.consume();
+        globals.push({ type: 'define', name: t.name, value: t.value });
+        continue;
+      }
       if (this.match('COMMENT')) {
         globals.push({ type: 'comment', text: this.consume().value });
         continue;
@@ -203,8 +214,25 @@ class Parser {
     if (!this.match('IDENT')) { this.skipStatement(); return null; }
     const name = this.consume().value;
 
-    // Array: saltar
-    if (this.match('LBRACKET')) { this.skipStatement(); return null; }
+    // Array: TYPE name[size] = {...}
+    if (this.match('LBRACKET')) {
+      this.consume(); // [
+      let arrSize = null;
+      if (!this.match('RBRACKET')) arrSize = this.parseExpr();
+      this.eat('RBRACKET');
+      let arrItems = [];
+      if (this.eat('OP', '=')) {
+        if (this.eat('LBRACE')) {
+          while (!this.match('RBRACE') && !this.match('EOF')) {
+            arrItems.push(this.parseExpr());
+            if (!this.eat('COMMA')) break;
+          }
+          this.eat('RBRACE');
+        }
+      }
+      this.eat('SEMI');
+      return { type: 'arraydecl', varType: retType, name, size: arrSize, items: arrItems };
+    }
 
     // Función: TYPE name ( params ) { body }
     if (this.match('LPAREN')) {
@@ -263,8 +291,11 @@ class Parser {
       return { type: 'return', value };
     }
 
-    // break / continue / switch: saltar
-    if (['break','continue','switch','case','default'].includes(this.peek().value) && this.match('IDENT')) {
+    // switch: parsear
+    if (this.match('IDENT', 'switch')) return this.parseSwitch();
+
+    // break / continue / case / default: saltar
+    if (['break','continue','case','default'].includes(this.peek().value) && this.match('IDENT')) {
       this.skipStatement();
       return null;
     }
@@ -345,6 +376,47 @@ class Parser {
     return { type: 'dowhile', cond, body };
   }
 
+  parseSwitch() {
+    this.consume(); // 'switch'
+    this.eat('LPAREN');
+    const expr = this.parseExpr();
+    this.eat('RPAREN');
+    this.eat('LBRACE');
+    const cases = [];
+    let defaultBody = [];
+    while (!this.match('RBRACE') && !this.match('EOF')) {
+      if (this.match('IDENT', 'case')) {
+        this.consume(); // 'case'
+        const val = this.parseExpr();
+        // ':' no se tokeniza (char desconocido), ya se saltó
+        const body = [];
+        while (
+          !this.match('IDENT', 'case') &&
+          !this.match('IDENT', 'default') &&
+          !this.match('RBRACE') &&
+          !this.match('EOF')
+        ) {
+          if (this.match('IDENT', 'break')) { this.consume(); this.eat('SEMI'); break; }
+          const s = this.parseStatement();
+          if (s) body.push(s);
+        }
+        cases.push({ val, body });
+      } else if (this.match('IDENT', 'default')) {
+        this.consume(); // 'default'
+        // ':' ya saltado
+        while (!this.match('RBRACE') && !this.match('EOF')) {
+          if (this.match('IDENT', 'break')) { this.consume(); this.eat('SEMI'); break; }
+          const s = this.parseStatement();
+          if (s) defaultBody.push(s);
+        }
+      } else {
+        this.consume(); // token desconocido dentro de switch
+      }
+    }
+    this.eat('RBRACE');
+    return { type: 'switch', expr, cases, defaultBody };
+  }
+
   parseBranchBlock() {
     if (this.match('LBRACE')) {
       this.consume();
@@ -372,7 +444,23 @@ class Parser {
     }
     if (!this.match('IDENT')) return null;
     const name = this.consume().value;
-    if (this.match('LBRACKET')) { this.skipStatement(); return null; }
+    if (this.match('LBRACKET')) {
+      this.consume(); // [
+      let arrSize = null;
+      if (!this.match('RBRACKET')) arrSize = this.parseExpr();
+      this.eat('RBRACKET');
+      let arrItems = [];
+      if (this.eat('OP', '=')) {
+        if (this.eat('LBRACE')) {
+          while (!this.match('RBRACE') && !this.match('EOF')) {
+            arrItems.push(this.parseExpr());
+            if (!this.eat('COMMA')) break;
+          }
+          this.eat('RBRACE');
+        }
+      }
+      return { type: 'arraydecl', varType, name, size: arrSize, items: arrItems };
+    }
     let value = null;
     if (this.eat('OP', '=')) value = this.parseExpr();
     return { type: 'vardecl', varType, name, value };

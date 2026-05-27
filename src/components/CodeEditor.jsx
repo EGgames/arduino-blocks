@@ -166,10 +166,15 @@ export default function CodeEditor({ code, onChange, syncStatus = 'ok', fontSize
           sketch.ino
         </Typography>
 
-        {/* Estado de sincronización */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: statusChip.color }} />
-          <Typography variant="caption" sx={{ color: statusChip.color, fontSize: 10 }}>
+        {/* Estado de sincronización — UX-06: mayor visibilidad */}
+        <Box sx={{
+          display: 'flex', alignItems: 'center', gap: 0.5,
+          px: 0.8, py: 0.15, borderRadius: 1,
+          bgcolor: `${statusChip.color}18`,
+          border: `1px solid ${statusChip.color}50`,
+        }}>
+          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: statusChip.color, flexShrink: 0 }} />
+          <Typography variant="caption" sx={{ color: statusChip.color, fontSize: 11, lineHeight: 1 }}>
             {statusChip.label}
           </Typography>
         </Box>

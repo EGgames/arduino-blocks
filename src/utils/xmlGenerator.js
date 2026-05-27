@@ -220,6 +220,31 @@ function stmtBlock(stmt) {
       return `<block type="arduino_do_while" id="${nid()}"><statement name="DO">${bodyXml}</statement>${valueWrap('CONDITION', stmt.cond)}</block>`;
     }
 
+    case 'arraydecl': {
+      const arrTypeMap = { 'int':'int','float':'float','byte':'byte','bool':'bool','boolean':'bool' };
+      const t = arrTypeMap[stmt.varType] || arrTypeMap[(stmt.varType || '').split(' ').pop()] || 'int';
+      const size = stmt.size?.type === 'num' ? stmt.size.value : (stmt.items?.length || 10);
+      return `<block type="arduino_array_declare" id="${nid()}"><field name="TYPE">${esc(t)}</field><field name="NAME">${esc(stmt.name)}</field><field name="SIZE">${esc(size)}</field></block>`;
+    }
+
+    case 'switch': {
+      const c0 = stmt.cases[0] || null;
+      const c1 = stmt.cases[1] || null;
+      const do1Xml = c0 ? chain(c0.body.map(stmtBlock)) : '';
+      const do2Xml = c1 ? chain(c1.body.map(stmtBlock)) : '';
+      const defXml = chain((stmt.defaultBody || []).map(stmtBlock));
+      return [
+        `<block type="arduino_switch_case" id="${nid()}">`,
+        valueWrap('EXPR', stmt.expr),
+        valueWrap('CASE1_VAL', c0?.val || { type: 'num', value: 0 }),
+        do1Xml ? `<statement name="DO1">${do1Xml}</statement>` : '',
+        valueWrap('CASE2_VAL', c1?.val || { type: 'num', value: 1 }),
+        do2Xml ? `<statement name="DO2">${do2Xml}</statement>` : '',
+        defXml ? `<statement name="DEFAULT">${defXml}</statement>` : '',
+        `</block>`,
+      ].join('');
+    }
+
     case 'return': {
       if (!stmt.value) return `<block type="arduino_return_void" id="${nid()}"></block>`;
       return `<block type="arduino_return" id="${nid()}">${valueWrap('VALUE', stmt.value)}</block>`;
@@ -357,6 +382,40 @@ export function codeToXML(code) {
     includeY += 60;
   }
 
+  // Generar bloques globales flotantes (variables, arrays, defines)
+  let globalBlocksXml = '';
+  let globalY = 20;
+  const globalTypeOpts = ['int','float','bool','String','long','byte'];
+  const arrTypeOpts    = ['int','float','byte','bool'];
+  for (const g of (ast.globals || [])) {
+    if (g.type === 'vardecl') {
+      const base = (g.varType || 'int').replace(/^(?:const|static)\s+/, '');
+      const t = globalTypeOpts.includes(base) ? base : 'int';
+      globalBlocksXml += `\n  <block type="arduino_global_variable_declare" id="${nid()}" x="-500" y="${globalY}">
+    <field name="TYPE">${esc(t)}</field>
+    <field name="NAME">${esc(g.name)}</field>
+    ${valueWrap('VALUE', g.value || { type: 'num', value: 0 })}
+  </block>`;
+      globalY += 65;
+    } else if (g.type === 'arraydecl') {
+      const base = (g.varType || 'int').replace(/^(?:const|static)\s+/, '');
+      const t = arrTypeOpts.includes(base) ? base : (arrTypeOpts.includes(base.split(' ').pop()) ? base.split(' ').pop() : 'int');
+      const size = g.size?.type === 'num' ? g.size.value : (g.items?.length || 10);
+      globalBlocksXml += `\n  <block type="arduino_array_declare" id="${nid()}" x="-500" y="${globalY}">
+    <field name="TYPE">${esc(t)}</field>
+    <field name="NAME">${esc(g.name)}</field>
+    <field name="SIZE">${esc(size)}</field>
+  </block>`;
+      globalY += 65;
+    } else if (g.type === 'define') {
+      globalBlocksXml += `\n  <block type="arduino_define" id="${nid()}" x="-500" y="${globalY}">
+    <field name="NAME">${esc(g.name)}</field>
+    <field name="VALUE">${esc(g.value)}</field>
+  </block>`;
+      globalY += 65;
+    }
+  }
+
   const setupXml = chain(ast.setup.map(stmtBlock));
   const loopXml  = chain(ast.loop.map(stmtBlock));
 
@@ -364,6 +423,6 @@ export function codeToXML(code) {
   <block type="arduino_setup_loop" id="${nid()}" x="20" y="20">
     <statement name="SETUP">${setupXml}</statement>
     <statement name="LOOP">${loopXml}</statement>
-  </block>${funcBlocksXml}${includeBlocksXml}
+  </block>${funcBlocksXml}${includeBlocksXml}${globalBlocksXml}
 </xml>`;
 }

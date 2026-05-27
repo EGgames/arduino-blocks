@@ -31,6 +31,33 @@ export function getKidsTheme() {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// Tema oscuro para el modo Avanzado (HU-23)
+// ──────────────────────────────────────────────────────────────────────────────
+
+let _darkTheme = null;
+export function getArduinoDarkTheme() {
+  if (_darkTheme) return _darkTheme;
+  try {
+    _darkTheme = Blockly.Theme.defineTheme('arduinoDark', {
+      base: Blockly.Themes.Zelos,
+      componentStyles: {
+        workspaceBackgroundColour: '#1a2335',
+        toolboxBackgroundColour: '#1e2a3e',
+        toolboxForegroundColour: '#e0ecff',
+        flyoutBackgroundColour: '#192236',
+        flyoutForegroundColour: '#d4e6ff',
+        flyoutOpacity: 1,
+        scrollbarColour: '#4fc3f7',
+        scrollbarOpacity: 0.4,
+      },
+    });
+  } catch {
+    _darkTheme = Blockly.Themes.Zelos;
+  }
+  return _darkTheme;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // Bloques "Kids" — versión completamente en español para el modo Niño
 // Misma estructura interna (mismos nombres de campo/input) que los bloques
 // arduino_* para que los generadores puedan delegarse directamente.

@@ -5,7 +5,7 @@ import BlockInfoPanel from './BlockInfoPanel';
 import { blocks } from 'blockly/blocks';
 import { defineArduinoBlocks } from '../blocks/arduinoBlocks';
 import { arduinoGenerator, registerArduinoGenerators } from '../blocks/arduinoGenerator';
-import { defineKidsBlocks, registerKidsGenerators, getKidsTheme } from '../blocks/kidsBlocks';
+import { defineKidsBlocks, registerKidsGenerators, getKidsTheme, getArduinoDarkTheme } from '../blocks/kidsBlocks';
 import { toolboxConfig, kidsToolboxConfig } from '../blocks/toolbox';
 import { registerLibraryBlocks, buildLibraryToolboxCategory, buildFallbackLibraryToolboxCategory } from '../blocks/libraryBlocks';
 import { INITIAL_XML, KIDS_INITIAL_XML } from '../config/initialWorkspace';
@@ -30,7 +30,7 @@ function initBlockly() {
   }
 }
 
-export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced', isMobile = false }, ref) {
+export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced', isMobile = false, isDark = false }, ref) {
   const blocklyDiv   = useRef(null);
   const workspaceRef = useRef(null);
   const skipEmit     = useRef(false);   // true mientras cargamos XML externamente
@@ -40,6 +40,15 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
   // Ref para acceder al valor actualizado de isMobile dentro de closures estables
   const isMobileRef  = useRef(isMobile);
   useEffect(() => { isMobileRef.current = isMobile; }, [isMobile]);
+
+  // Ref para acceder al isDark actual en el callback de inyección (solo corre una vez)
+  const isDarkRef = useRef(isDark);
+  useEffect(() => { isDarkRef.current = isDark; }, [isDark]);
+
+  // Refs de estado del toolbox (libs activas y bloques custom)
+  const activeLibsRef = useRef([]);
+  const customDefsRef = useRef([]);
+  const _rebuildRef   = useRef(null);
 
   // En mobile: usar solo el emoji como nombre de categoría → toolbox ~50px vs ~200px
   const toMobileToolbox = useCallback((config) => {
@@ -53,6 +62,32 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
       ),
     };
   }, []);
+
+  // Reconstruye el toolbox completo (libs + custom blocks).
+  // Se reasigna en cada render para capturar toMobileToolbox actualizado.
+  _rebuildRef.current = () => {
+    const ws = workspaceRef.current;
+    if (!ws) return;
+    const uniqueLibs = activeLibsRef.current;
+    const customDefs = customDefsRef.current;
+    const libCategories = uniqueLibs
+      .map(lib => buildLibraryToolboxCategory(lib) ?? buildFallbackLibraryToolboxCategory(lib, arduinoGenerator))
+      .filter(Boolean);
+    const customCategory = customDefs.length > 0
+      ? [{ kind: 'category', name: '\uD83E\uDDE9 Mis bloques', colour: '45',
+           contents: customDefs.map(def => ({ kind: 'block', type: `custom_${def.id}` })) }]
+      : [];
+    const baseConfig = modeRef.current === 'kids' ? kidsToolboxConfig : toolboxConfig;
+    const extra = [...libCategories, ...customCategory];
+    const newContents = extra.length > 0
+      ? [...baseConfig.contents, { kind: 'sep' }, ...extra]
+      : [...baseConfig.contents];
+    try {
+      ws.updateToolbox(toMobileToolbox({ ...baseConfig, contents: newContents }));
+    } catch (e) {
+      console.warn('[BlockEditor] Error actualizando toolbox:', e);
+    }
+  };
 
   // Sincronizar modeRef: guardar workspace actual, cargar el nuevo y cambiar tema
   useEffect(() => {
@@ -92,12 +127,7 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
     } catch (_) {}
 
     // Actualizar toolbox
-    const baseConfig = mode === 'kids' ? kidsToolboxConfig : toolboxConfig;
-    try {
-      ws.updateToolbox(toMobileToolbox(baseConfig));
-    } catch (e) {
-      console.warn('[BlockEditor] Error actualizando toolbox por modo:', e);
-    }
+    _rebuildRef.current?.();
   }, [mode]);
 
   // ── API pública expuesta al padre via ref ──────────────────────────────────
@@ -148,32 +178,22 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
      * @param {string[]} libs - nombres de librerías actualmente incluidas
      */
     updateToolboxForLibraries(libs) {
-      const ws = workspaceRef.current;
-      if (!ws) return;
-
       const uniqueLibs = [...new Set(libs)];
-
       // Registrar bloques Blockly para librerías que tengan definición
       for (const lib of uniqueLibs) {
         registerLibraryBlocks(lib, arduinoGenerator);
       }
+      activeLibsRef.current = uniqueLibs;
+      _rebuildRef.current?.();
+    },
 
-      // Construir categorías de librería (predefinidas o fallback genérico)
-      const libCategories = uniqueLibs
-        .map((lib) => buildLibraryToolboxCategory(lib) ?? buildFallbackLibraryToolboxCategory(lib, arduinoGenerator))
-        .filter(Boolean);
-
-      const baseConfig = modeRef.current === 'kids' ? kidsToolboxConfig : toolboxConfig;
-
-      const newContents = libCategories.length > 0
-        ? [...baseConfig.contents, { kind: 'sep' }, ...libCategories]
-        : [...baseConfig.contents];
-
-      try {
-        ws.updateToolbox(toMobileToolbox({ ...baseConfig, contents: newContents }));
-      } catch (e) {
-        console.warn('[BlockEditor] Error actualizando toolbox:', e);
-      }
+    /**
+     * Actualiza el toolbox con la lista actual de bloques personalizados.
+     * @param {Array} defs - lista de definiciones de bloques custom
+     */
+    updateCustomBlocksInToolbox(defs) {
+      customDefsRef.current = defs || [];
+      _rebuildRef.current?.();
     },
 
     /**
@@ -208,6 +228,12 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
         return false;
       }
     },
+
+    /** Deshace la última acción en el workspace Blockly (UX-05) */
+    undo() { workspaceRef.current?.undo(false); },
+
+    /** Rehace la última acción deshecha en el workspace Blockly (UX-05) */
+    redo() { workspaceRef.current?.undo(true); },
 
     /**
      * Agrega un bloque arduino_include flotante al workspace.
@@ -254,11 +280,11 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
 
     const workspace = Blockly.inject(blocklyDiv.current, {
       toolbox: toMobileToolbox(isKids ? kidsToolboxConfig : toolboxConfig),
-      grid: { spacing: isKids ? 30 : 20, length: 3, colour: isKids ? '#b3d9ff' : '#ccc', snap: true },
+      grid: { spacing: isKids ? 30 : 20, length: 3, colour: isKids ? '#b3d9ff' : (isDarkRef.current ? '#2a3a4e' : '#ccc'), snap: true },
       zoom: { controls: true, wheel: true, pinch: true, startScale, maxScale: 4, minScale: 0.3 },
       move: { scrollbars: true, drag: true, wheel: true },
       trashcan: true,
-      theme: isKids ? getKidsTheme() : Blockly.Themes.Zelos,
+      theme: isKids ? getKidsTheme() : (isDarkRef.current ? getArduinoDarkTheme() : Blockly.Themes.Zelos),
     });
 
     workspaceRef.current = workspace;
@@ -326,6 +352,15 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Cambiar tema oscuro/claro dinámicamente (HU-23)
+  useEffect(() => {
+    const ws = workspaceRef.current;
+    if (!ws || modeRef.current === 'kids') return;
+    try {
+      ws.setTheme(isDark ? getArduinoDarkTheme() : Blockly.Themes.Zelos);
+    } catch (_) {}
+  }, [isDark]);
+
   const emitCode = useCallback((ws) => {
     try {
       const code = arduinoGenerator.workspaceToCode(ws);
@@ -345,6 +380,26 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
     // Flex-column para que el div de Blockly se redimensione via flex y las
     // coordenadas de clic del toolbox sean siempre correctas.
     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column' }}>
+      {/* UX-04: cabecera identificativa del panel de bloques (solo desktop) */}
+      {!isMobile && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '3px 12px',
+          background: mode === 'kids' ? '#1b5e20' : (isDark ? '#2d2d2d' : '#e8edf3'),
+          borderBottom: mode === 'kids' ? '2px solid #43a047' : (isDark ? '1px solid #3c3c3c' : '1px solid #c8d0db'),
+          flexShrink: 0,
+          zIndex: 1,
+        }}>
+          <span style={{
+            color: mode === 'kids' ? '#c8e6c9' : (isDark ? '#cccccc' : '#555'),
+            fontFamily: 'monospace',
+            fontSize: 12,
+          }}>
+            {mode === 'kids' ? '🧩 bloques' : 'editor.blocks'}
+          </span>
+        </div>
+      )}
       <div
         ref={blocklyDiv}
         style={{ flex: 1, minHeight: 0 }}

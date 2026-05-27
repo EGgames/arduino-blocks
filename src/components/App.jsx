@@ -92,6 +92,20 @@ export default function App() {
         e.preventDefault();
         handleSave();
       }
+      // UX-05: Ctrl+Z / Cmd+Z → deshacer en Blockly cuando Monaco no tiene foco
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        if (!document.activeElement?.closest?.('.monaco-editor')) {
+          e.preventDefault();
+          blockEditorRef.current?.undo();
+        }
+      }
+      // UX-05: Ctrl+Y / Ctrl+Shift+Z → rehacer en Blockly cuando Monaco no tiene foco
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        if (!document.activeElement?.closest?.('.monaco-editor')) {
+          e.preventDefault();
+          blockEditorRef.current?.redo();
+        }
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -99,17 +113,35 @@ export default function App() {
 
   // Abrir
   const handleOpen = async () => {
-    if (!isElectron) return showSnack('Abrir archivos solo disponible en app de escritorio', 'warning');
-    const result = await window.electronAPI.openFile();
-    if (!result.success) return;
-    const ino = result.content;
-    setCode(ino);
-    parseAndUpdateBlocks.cancel?.();
-    const xml = codeToXML(ino);
-    if (xml) {
-      blockEditorRef.current?.loadXML(xml);
+    if (isElectron) {
+      const result = await window.electronAPI.openFile();
+      if (!result.success) return;
+      const ino = result.content;
+      setCode(ino);
+      parseAndUpdateBlocks.cancel?.();
+      const xml = codeToXML(ino);
+      if (xml) blockEditorRef.current?.loadXML(xml);
+      showSnack('Archivo cargado: ' + result.filePath, 'success');
+    } else {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.ino,.cpp,.c,.h';
+      input.onchange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          setCode(text);
+          parseAndUpdateBlocks.cancel?.();
+          const xml = codeToXML(text);
+          if (xml) blockEditorRef.current?.loadXML(xml);
+          showSnack('Archivo cargado: ' + file.name, 'success');
+        } catch {
+          showSnack('Error al leer el archivo', 'error');
+        }
+      };
+      input.click();
     }
-    showSnack('Archivo cargado: ' + result.filePath, 'success');
   };
 
   // Divisor redimensionable (horizontal)
@@ -225,7 +257,7 @@ export default function App() {
             </Box>
           )}
 
-          {isElectron && settings.mode !== 'kids' && (
+          {settings.mode !== 'kids' && (
             <Tooltip title="Abrir proyecto .ino">
               <Button color="inherit" startIcon={<FolderOpenIcon />} size="small" onClick={handleOpen}>
                 Abrir
@@ -287,6 +319,7 @@ export default function App() {
                 ref={blockEditorRef}
                 onCodeChange={handleBlockCodeChange}
                 mode={settings.mode}
+                isDark={isDark}
                 isMobile
               />
             </Box>
@@ -412,6 +445,7 @@ export default function App() {
             ref={blockEditorRef}
             onCodeChange={handleBlockCodeChange}
             mode={settings.mode}
+            isDark={isDark}
           />
         </Box>
 

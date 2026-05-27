@@ -21,6 +21,7 @@ export default function UploadPanel({ code, defaultPort = '', defaultBoard = 'ar
   const [logOpen, setLogOpen] = useState(false);
   const [log, setLog] = useState('');
   const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' });
+  const [webSerialPortLabel, setWebSerialPortLabel] = useState('');
   const logRef = useRef(null);
 
   useEffect(() => {
@@ -91,14 +92,92 @@ export default function UploadPanel({ code, defaultPort = '', defaultBoard = 'ar
 
   const showSnack = (message, severity = 'info') => setSnack({ open: true, message, severity });
 
+  const handleWebSerialConnect = async () => {
+    try {
+      const port = await navigator.serial.requestPort();
+      const info = port.getInfo?.() ?? {};
+      const vid = info.usbVendorId;
+      const pid = info.usbProductId;
+      const label = vid === 0x2341
+        ? 'Arduino (USB Serial)'
+        : pid
+          ? `USB Serial (${(vid ?? 0).toString(16).padStart(4, '0')}:${pid.toString(16).padStart(4, '0')})`
+          : 'Puerto Serie USB';
+      setWebSerialPortLabel(label);
+      showSnack('Puerto detectado: ' + label, 'success');
+    } catch (e) {
+      if (e.name !== 'NotFoundError' && e.name !== 'SecurityError') {
+        showSnack('Error al detectar puerto: ' + e.message, 'error');
+      }
+    }
+  };
+
   if (!isElectron) {
-    return (
-      <Box sx={flat ? { p: 2 } : { p: 2, m: 1, bgcolor: '#fff8e1', border: '1px solid #f9a825', borderRadius: 1 }}>
-        <Typography variant="body2" color={flat ? 'rgba(200,230,201,0.8)' : 'text.secondary'}>
-          ⚡ La subida a placa requiere la aplicación de escritorio (Electron).
-          En el navegador puedes editar bloques y ver el código generado.
-        </Typography>
+    const hasWebSerial = !!navigator?.serial;
+    const webPortContent = hasWebSerial ? (
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<UsbIcon />}
+          onClick={handleWebSerialConnect}
+          sx={{ flex: 1 }}
+        >
+          {webSerialPortLabel || 'Detectar puerto USB'}
+        </Button>
       </Box>
+    ) : (
+      <Typography variant="caption" color="text.secondary">
+        Puerto USB no disponible en este navegador. Usa Chrome 89+ o la app de escritorio.
+      </Typography>
+    );
+
+    const webContainerSx = flat
+      ? { p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }
+      : { p: 1.5, m: 1, display: 'flex', flexDirection: 'column', gap: 1.5 };
+    const WebWrapper = flat ? Box : Paper;
+    const webWrapperProps = flat ? { sx: webContainerSx } : { elevation: 2, sx: webContainerSx };
+    return (
+      <WebWrapper {...webWrapperProps}>
+        <Typography variant="subtitle2" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <UsbIcon fontSize="small" /> Conexión y Subida
+        </Typography>
+
+        {/* Placa */}
+        <FormControl size="small" fullWidth>
+          <InputLabel>Placa</InputLabel>
+          <Select value={selectedBoard} label="Placa" onChange={(e) => setSelectedBoard(e.target.value)}>
+            {BOARDS.map((b) => (
+              <MenuItem key={b.fqbn} value={b.fqbn}>{b.label}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {/* Puerto Web Serial */}
+        {webPortContent}
+
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+          ⚡ Verificar y subir requieren la app de escritorio. Aquí puedes seleccionar la placa y detectar el puerto.
+        </Typography>
+
+        {/* Botones deshabilitados en web */}
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Tooltip title="Disponible solo en la app de escritorio">
+            <span style={{ flex: 1 }}>
+              <Button variant="outlined" size="small" startIcon={<CheckCircleIcon />} disabled fullWidth>
+                Verificar
+              </Button>
+            </span>
+          </Tooltip>
+          <Tooltip title="Disponible solo en la app de escritorio">
+            <span style={{ flex: 1 }}>
+              <Button variant="contained" size="small" color="success" startIcon={<UploadIcon />} disabled fullWidth>
+                Subir
+              </Button>
+            </span>
+          </Tooltip>
+        </Box>
+      </WebWrapper>
     );
   }
 

@@ -103,9 +103,9 @@ describe('App — render inicial', () => {
     expect(screen.getByText('Web')).toBeInTheDocument();
   });
 
-  test('no muestra el botón "Abrir" en modo web', () => {
+  test('muestra el botón "Abrir" en modo web (HU-21: apertura de archivos desde el navegador)', () => {
     render(<App />);
-    expect(screen.queryByText('Abrir')).not.toBeInTheDocument();
+    expect(screen.queryByText('Abrir')).toBeInTheDocument();
   });
 
   test('renderiza el BlockEditor (mock)', () => {

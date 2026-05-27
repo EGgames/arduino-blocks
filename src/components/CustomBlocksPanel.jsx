@@ -62,6 +62,8 @@ export default function CustomBlocksPanel({ blockEditorRef }) {
   // Registrar bloques guardados al montar
   useEffect(() => {
     customBlocks.forEach(registerCustomBlock);
+    // Sincronizar toolbox con los bloques ya guardados
+    blockEditorRef.current?.updateCustomBlocksInToolbox?.(customBlocks);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -81,6 +83,7 @@ export default function CustomBlocksPanel({ blockEditorRef }) {
     const next = [...customBlocks, def];
     setCustomBlocks(next);
     persist(next);
+    blockEditorRef.current?.updateCustomBlocksInToolbox?.(next);
     setLabel('');
     setCode('');
   };
@@ -89,6 +92,7 @@ export default function CustomBlocksPanel({ blockEditorRef }) {
     const next = customBlocks.filter((b) => b.id !== id);
     setCustomBlocks(next);
     persist(next);
+    blockEditorRef.current?.updateCustomBlocksInToolbox?.(next);
     // Nota: Blockly.Blocks no se puede des-registrar en caliente,
     // el tipo queda pero ya no aparece en la lista del panel.
   };
