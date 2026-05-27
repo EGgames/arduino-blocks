@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
-  AppBar, Box, Button, Chip, Divider, IconButton, Snackbar, Alert,
-  Tab, Tabs, Toolbar, Tooltip, Typography,
+  AppBar, Box, BottomNavigation, BottomNavigationAction,
+  Button, Chip, Divider, IconButton, Snackbar, Alert,
+  Tab, Tabs, Toolbar, Tooltip, Typography, useMediaQuery,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SaveIcon from '@mui/icons-material/Save';
@@ -12,6 +13,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import UploadIcon from '@mui/icons-material/Upload';
 import ExtensionIcon from '@mui/icons-material/Extension';
+import BuildIcon from '@mui/icons-material/Build';
 import BlockEditor from './BlockEditor';
 import CodeEditor from './CodeEditor';
 import UploadPanel from './UploadPanel';
@@ -33,8 +35,10 @@ export default function App() {
   const [bottomPanelHeight, setBottomPanelHeight] = useState(280);
   const [snack, setSnack]             = useState({ open: false, message: '', severity: 'info' });
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mobileView, setMobileView] = useState('blocks');
 
   const [settings, setSettings, isDark] = useSettings();
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   // Aplicar clase de tema al documento
   useEffect(() => {
@@ -255,6 +259,90 @@ export default function App() {
       </AppBar>
 
       {/* Area principal */}
+      {isMobile ? (
+        /* ── MOBILE: panel único + barra de navegación inferior ─────────── */
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* Los 3 paneles siempre montados para no reinicializar Blockly */}
+          <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+
+            {/* Vista: Bloques */}
+            <Box sx={{ position: 'absolute', inset: 0, display: mobileView === 'blocks' ? 'flex' : 'none', flexDirection: 'column' }}>
+              <BlockEditor
+                ref={blockEditorRef}
+                onCodeChange={handleBlockCodeChange}
+                mode={settings.mode}
+              />
+            </Box>
+
+            {/* Vista: Código */}
+            <Box sx={{ position: 'absolute', inset: 0, display: mobileView === 'code' ? 'flex' : 'none', flexDirection: 'column' }}>
+              <CodeEditor
+                code={code}
+                onChange={handleCodeEditorChange}
+                syncStatus={syncStatus}
+                fontSize={(settings.fontSize || 13) + 2}
+                colorTheme={isDark ? 'dark' : 'light'}
+              />
+            </Box>
+
+            {/* Vista: Herramientas */}
+            <Box sx={{ position: 'absolute', inset: 0, display: mobileView === 'tools' ? 'flex' : 'none', flexDirection: 'column', bgcolor: '#0d1b2e' }}>
+              <Tabs
+                value={bottomTab}
+                onChange={(_, v) => setBottomTab(v)}
+                variant="fullWidth"
+                TabIndicatorProps={{ style: { height: 2, backgroundColor: '#4fc3f7' } }}
+                sx={{
+                  minHeight: 48, flexShrink: 0,
+                  bgcolor: '#1e2535',
+                  '& .MuiTab-root': {
+                    minHeight: 48, fontSize: 13, textTransform: 'none', gap: 0.5,
+                    color: 'rgba(200,212,227,0.65)',
+                    '&.Mui-selected': { color: '#e0ecff' },
+                  },
+                }}
+              >
+                <Tab icon={<UploadIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Subir" value="upload" />
+                <Tab icon={<LibraryBooksIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Librerías" value="libraries" />
+                <Tab icon={<ExtensionIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Bloques" value="custom" />
+              </Tabs>
+              <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                {bottomTab === 'upload'    && <UploadPanel code={code} defaultPort={settings.comPort} defaultBoard={settings.board} />}
+                {bottomTab === 'libraries' && (
+                  <LibraryPanel blockEditorRef={blockEditorRef} activeIncludes={activeIncludes} isDark={isDark} />
+                )}
+                {bottomTab === 'custom' && (
+                  <CustomBlocksPanel blockEditorRef={blockEditorRef} />
+                )}
+              </Box>
+            </Box>
+
+          </Box>
+
+          {/* Barra de navegación inferior */}
+          <BottomNavigation
+            value={mobileView}
+            onChange={(_, v) => setMobileView(v)}
+            showLabels
+            sx={{
+              flexShrink: 0, height: 60,
+              bgcolor: '#0a1929',
+              borderTop: '1px solid rgba(255,255,255,0.12)',
+              '& .MuiBottomNavigationAction-root': {
+                color: 'rgba(200,212,227,0.5)',
+                minWidth: 0,
+                '&.Mui-selected': { color: '#4fc3f7' },
+              },
+              '& .MuiBottomNavigationAction-label': { fontSize: 11, mt: 0.3 },
+            }}
+          >
+            <BottomNavigationAction label="Bloques" value="blocks" icon={<ExtensionIcon />} />
+            <BottomNavigationAction label="Código"  value="code"   icon={<CodeIcon />} />
+            <BottomNavigationAction label="Herramientas" value="tools" icon={<BuildIcon />} />
+          </BottomNavigation>
+        </Box>
+      ) : (
+      /* ── DESKTOP ─────────────────────────────────────────────────────── */
       <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
         {/* Panel izquierdo: Blockly — position:relative para contener el div absoluto */}
@@ -421,6 +509,7 @@ export default function App() {
         )}
 
       </Box>
+      )}
 
       {/* Diálogo de configuración */}
       <SettingsDialog
@@ -448,7 +537,7 @@ export default function App() {
       {/* Barra de estado inferior */}
       <Box sx={{
         bgcolor: '#0a1929', color: 'rgba(255,255,255,0.55)',
-        px: 2, height: 22, display: 'flex', alignItems: 'center', gap: 2,
+        px: 2, height: 22, display: isMobile ? 'none' : 'flex', alignItems: 'center', gap: 2,
         borderTop: '1px solid rgba(255,255,255,0.07)', flexShrink: 0,
         fontSize: 11, userSelect: 'none',
       }}>
