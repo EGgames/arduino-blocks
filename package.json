@@ -52,6 +52,7 @@
     },
     "win": {
       "target": "nsis",
+      "artifactName": "Arduino-Blocks-Setup-${version}.${ext}",
       "extraResources": [
         {
           "from": "tools/win/",
