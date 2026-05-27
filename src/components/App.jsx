@@ -31,14 +31,14 @@ export default function App() {
   const [code, setCode]               = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [bottomTab, setBottomTab]     = useState('libraries');
-  const [rightWidth, setRightWidth]   = useState(440);
+  const [rightWidth, setRightWidth]   = useState(() => Math.min(440, Math.round(window.innerWidth * 0.42)));
   const [bottomPanelHeight, setBottomPanelHeight] = useState(280);
   const [snack, setSnack]             = useState({ open: false, message: '', severity: 'info' });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileView, setMobileView] = useState('blocks');
 
   const [settings, setSettings, isDark] = useSettings();
-  const isMobile = useMediaQuery('(max-width: 768px)');
+  const isMobile = useMediaQuery('(max-width: 960px)');
 
   // Aplicar clase de tema al documento
   useEffect(() => {
