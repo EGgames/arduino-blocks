@@ -1,0 +1,38 @@
+# ── Dependencias ──────────────────────────────────────────────
+node_modules/
+
+# ── Builds / distribución ─────────────────────────────────────
+build/
+dist/
+
+# ── Variables de entorno locales ──────────────────────────────
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env
+
+# ── Logs ──────────────────────────────────────────────────────
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Cobertura Jest ────────────────────────────────────────────
+coverage/
+
+# ── Maven / E2E ───────────────────────────────────────────────
+e2e/target/
+e2e/*.txt
+
+# ── Electron builder output ───────────────────────────────────
+out/
+
+# ── Binarios de arduino-cli (descargados con npm run download-cli) ──
+tools/
+
+# ── IDEs ──────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/settings.json
+.DS_Store
+Thumbs.db

@@ -1,0 +1,11 @@
+{
+  "files": {
+    "main.css": "/arduino-blocks/static/css/main.5f37220b.css",
+    "main.js": "/arduino-blocks/static/js/main.d27481da.js",
+    "index.html": "/arduino-blocks/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.5f37220b.css",
+    "static/js/main.d27481da.js"
+  ]
+}
