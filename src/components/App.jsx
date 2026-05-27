@@ -63,7 +63,7 @@ export default function App() {
 
   // Actualizar toolbox cuando cambian las librerías activas
   useEffect(() => {
-    blockEditorRef.current?.updateToolboxForLibraries(activeIncludes);
+    blockEditorRef.current?.updateToolboxForLibraries?.(activeIncludes);
   }, [activeIncludes]);
 
   // Guardar
