@@ -12,7 +12,7 @@ import { BOARDS } from '../data/boards';
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI?.isElectron;
 
-export default function UploadPanel({ code, defaultPort = '', defaultBoard = 'arduino:avr:uno' }) {
+export default function UploadPanel({ code, defaultPort = '', defaultBoard = 'arduino:avr:uno', flat = false }) {
   const [ports, setPorts] = useState([]);
   const [selectedPort, setSelectedPort] = useState(defaultPort);
   const [selectedBoard, setSelectedBoard] = useState(defaultBoard);
@@ -93,18 +93,24 @@ export default function UploadPanel({ code, defaultPort = '', defaultBoard = 'ar
 
   if (!isElectron) {
     return (
-      <Paper sx={{ p: 2, m: 1, bgcolor: '#fff8e1', border: '1px solid #f9a825' }}>
-        <Typography variant="body2" color="text.secondary">
+      <Box sx={flat ? { p: 2 } : { p: 2, m: 1, bgcolor: '#fff8e1', border: '1px solid #f9a825', borderRadius: 1 }}>
+        <Typography variant="body2" color={flat ? 'rgba(200,230,201,0.8)' : 'text.secondary'}>
           ⚡ La subida a placa requiere la aplicación de escritorio (Electron).
           En el navegador puedes editar bloques y ver el código generado.
         </Typography>
-      </Paper>
+      </Box>
     );
   }
 
+  const containerSx = flat
+    ? { p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }
+    : { p: 1.5, m: 1, display: 'flex', flexDirection: 'column', gap: 1.5 };
+
+  const WrapperComponent = flat ? Box : Paper;
+  const wrapperProps = flat ? { sx: containerSx } : { elevation: 2, sx: containerSx };
   return (
     <>
-      <Paper elevation={2} sx={{ p: 1.5, m: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <WrapperComponent {...wrapperProps}>
         <Typography variant="subtitle2" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <UsbIcon fontSize="small" /> Conexión y Subida
         </Typography>
@@ -164,7 +170,7 @@ export default function UploadPanel({ code, defaultPort = '', defaultBoard = 'ar
             Subir
           </Button>
         </Box>
-      </Paper>
+      </WrapperComponent>
 
       {/* Diálogo de log */}
       <Dialog open={logOpen} onClose={() => setLogOpen(false)} maxWidth="md" fullWidth>

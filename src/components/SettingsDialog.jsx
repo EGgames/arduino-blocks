@@ -11,6 +11,9 @@ import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import UsbIcon              from '@mui/icons-material/Usb';
 import DeveloperBoardIcon   from '@mui/icons-material/DeveloperBoard';
 import PaletteIcon          from '@mui/icons-material/Palette';
+import TuneIcon             from '@mui/icons-material/Tune';
+import ChildCareIcon        from '@mui/icons-material/ChildCare';
+import CodeIcon             from '@mui/icons-material/Code';
 import { BOARDS } from '../data/boards';
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI?.isElectron;
@@ -165,6 +168,43 @@ export default function SettingsDialog({ open, onClose, settings, onSettingsChan
               '& .MuiSlider-thumb': { width: 14, height: 14 },
             }}
           />
+        </Section>
+
+        <Divider sx={{ borderColor: 'rgba(255,255,255,0.07)' }} />
+
+        {/* ── Modo ────────────────────────────────────────────────── */}
+        <Section icon={<TuneIcon sx={{ fontSize: 16, color: '#4fc3f7' }} />} title="Modo de uso">
+          <Box sx={{ display: 'flex', gap: 0.75, mb: 0.5 }}>
+            {[
+              { value: 'advanced', label: 'Avanzado', Icon: CodeIcon,      desc: 'Todos los bloques' },
+              { value: 'kids',     label: 'Niño',      Icon: ChildCareIcon, desc: 'Bloques básicos' },
+            ].map(({ value, label, Icon, desc }) => {
+              const active = settings.mode === value;
+              return (
+                <Button key={value} size="small" fullWidth
+                  onClick={() => set('mode', value)}
+                  startIcon={<Icon sx={{ fontSize: 14 }} />}
+                  sx={{
+                    textTransform: 'none', fontSize: 11, py: 0.8,
+                    borderRadius: 1.5, flexDirection: 'column', gap: 0,
+                    ...(active ? {
+                      bgcolor: '#005fa3',
+                      border: '1px solid #4fc3f7',
+                      color: '#fff',
+                      '&:hover': { bgcolor: '#006db8' },
+                    } : {
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      color: 'rgba(255,255,255,0.55)',
+                      '&:hover': { border: '1px solid rgba(255,255,255,0.35)', color: '#fff', bgcolor: 'rgba(255,255,255,0.06)' },
+                    }),
+                  }}
+                >
+                  <span>{label}</span>
+                  <Typography sx={{ fontSize: 9, opacity: 0.7, lineHeight: 1, mt: 0.25 }}>{desc}</Typography>
+                </Button>
+              );
+            })}
+          </Box>
         </Section>
 
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.07)' }} />

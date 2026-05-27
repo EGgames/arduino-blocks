@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS = {
   fontSize: 13,                 // tamaño fuente Monaco
   comPort:  '',                 // puerto COM seleccionado
   board:    'arduino:avr:uno',  // placa seleccionada
+  mode:     'advanced',         // 'advanced' | 'kids'
 };
 
 export function useSettings() {

@@ -1,15 +1,19 @@
 import React, { useEffect, useRef, useCallback, useState, forwardRef, useImperativeHandle } from 'react';
 import * as Blockly from 'blockly';
-import { BLOCK_DESCRIPTIONS } from '../blocks/blockDescriptions';
+import { BLOCK_DESCRIPTIONS, KIDS_BLOCK_DESCRIPTIONS } from '../blocks/blockDescriptions';
 import BlockInfoPanel from './BlockInfoPanel';
 import { blocks } from 'blockly/blocks';
 import { defineArduinoBlocks } from '../blocks/arduinoBlocks';
 import { arduinoGenerator, registerArduinoGenerators } from '../blocks/arduinoGenerator';
-import { toolboxConfig } from '../blocks/toolbox';
+import { defineKidsBlocks, registerKidsGenerators, getKidsTheme } from '../blocks/kidsBlocks';
+import { toolboxConfig, kidsToolboxConfig } from '../blocks/toolbox';
 import { registerLibraryBlocks, buildLibraryToolboxCategory, buildFallbackLibraryToolboxCategory } from '../blocks/libraryBlocks';
-import { INITIAL_XML } from '../config/initialWorkspace';
+import { INITIAL_XML, KIDS_INITIAL_XML } from '../config/initialWorkspace';
 
-const LS_KEY = 'arduino-blocks-workspace';
+const LS_KEY_ADVANCED = 'arduino-blocks-workspace';
+const LS_KEY_KIDS     = 'arduino-blocks-workspace-kids';
+const getLSKey = (mode) => mode === 'kids' ? LS_KEY_KIDS : LS_KEY_ADVANCED;
+const getInitialXML = (mode) => mode === 'kids' ? KIDS_INITIAL_XML : INITIAL_XML;
 
 // Registrar bloques built-in de Blockly (math, logic, text...)
 Blockly.common.defineBlocks(blocks);
@@ -20,15 +24,64 @@ function initBlockly() {
   if (!initialized) {
     defineArduinoBlocks();
     registerArduinoGenerators(arduinoGenerator);
+    defineKidsBlocks();
+    registerKidsGenerators(arduinoGenerator);
     initialized = true;
   }
 }
 
-export default forwardRef(function BlockEditor({ onCodeChange }, ref) {
+export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced' }, ref) {
   const blocklyDiv   = useRef(null);
   const workspaceRef = useRef(null);
   const skipEmit     = useRef(false);   // true mientras cargamos XML externamente
+  const modeRef      = useRef(mode);    // ref para acceder al modo actual dentro de callbacks
   const [selectedInfo, setSelectedInfo] = useState(null);
+
+  // Sincronizar modeRef: guardar workspace actual, cargar el nuevo y cambiar tema
+  useEffect(() => {
+    const ws = workspaceRef.current;
+    if (!ws) return;
+
+    // Guardar workspace del modo anterior antes de cambiar
+    try {
+      const oldKey = getLSKey(modeRef.current);
+      const xmlDom = Blockly.Xml.workspaceToDom(ws);
+      localStorage.setItem(oldKey, Blockly.Xml.domToPrettyText(xmlDom));
+    } catch (_) {}
+
+    modeRef.current = mode;
+
+    // Cargar workspace del nuevo modo
+    const savedXML = localStorage.getItem(getLSKey(mode));
+    const xmlToLoad = savedXML || getInitialXML(mode);
+    try {
+      skipEmit.current = true;
+      ws.clear();
+      const dom = Blockly.utils.xml.textToDom(xmlToLoad);
+      Blockly.Xml.domToWorkspace(dom, ws);
+      setTimeout(() => {
+        ws.zoomToFit();
+        skipEmit.current = false;
+      }, 100);
+    } catch (e) {
+      console.warn('[BlockEditor] Error cargando workspace para modo:', mode, e);
+      skipEmit.current = false;
+    }
+
+    // Cambiar tema visual y zoom según modo
+    try {
+      ws.setTheme(mode === 'kids' ? getKidsTheme() : Blockly.Themes.Zelos);
+      ws.setScale(mode === 'kids' ? 1.0 : 0.85);
+    } catch (_) {}
+
+    // Actualizar toolbox
+    const baseConfig = mode === 'kids' ? kidsToolboxConfig : toolboxConfig;
+    try {
+      ws.updateToolbox(baseConfig);
+    } catch (e) {
+      console.warn('[BlockEditor] Error actualizando toolbox por modo:', e);
+    }
+  }, [mode]);
 
   // ── API pública expuesta al padre via ref ──────────────────────────────────
 
@@ -93,12 +146,14 @@ export default forwardRef(function BlockEditor({ onCodeChange }, ref) {
         .map((lib) => buildLibraryToolboxCategory(lib) ?? buildFallbackLibraryToolboxCategory(lib, arduinoGenerator))
         .filter(Boolean);
 
+      const baseConfig = modeRef.current === 'kids' ? kidsToolboxConfig : toolboxConfig;
+
       const newContents = libCategories.length > 0
-        ? [...toolboxConfig.contents, { kind: 'sep' }, ...libCategories]
-        : [...toolboxConfig.contents];
+        ? [...baseConfig.contents, { kind: 'sep' }, ...libCategories]
+        : [...baseConfig.contents];
 
       try {
-        ws.updateToolbox({ ...toolboxConfig, contents: newContents });
+        ws.updateToolbox({ ...baseConfig, contents: newContents });
       } catch (e) {
         console.warn('[BlockEditor] Error actualizando toolbox:', e);
       }
@@ -174,20 +229,21 @@ export default forwardRef(function BlockEditor({ onCodeChange }, ref) {
 
     if (workspaceRef.current) return; // ya inicializado
 
+    const isKids = modeRef.current === 'kids';
     const workspace = Blockly.inject(blocklyDiv.current, {
-      toolbox: toolboxConfig,
-      grid: { spacing: 20, length: 3, colour: '#ccc', snap: true },
-      zoom: { controls: true, wheel: true, startScale: 0.85, maxScale: 3, minScale: 0.3 },
+      toolbox: isKids ? kidsToolboxConfig : toolboxConfig,
+      grid: { spacing: isKids ? 30 : 20, length: 3, colour: isKids ? '#b3d9ff' : '#ccc', snap: true },
+      zoom: { controls: true, wheel: true, startScale: isKids ? 1.0 : 0.85, maxScale: 3, minScale: 0.3 },
       trashcan: true,
       scrollbars: true,
-      theme: Blockly.Themes.Zelos,
+      theme: isKids ? getKidsTheme() : Blockly.Themes.Zelos,
     });
 
     workspaceRef.current = workspace;
 
-    // Cargar workspace guardado en localStorage, o el ejemplo inicial
-    const savedXML = localStorage.getItem(LS_KEY);
-    const xmlToLoad = savedXML || INITIAL_XML;
+    // Cargar workspace guardado en localStorage, o el ejemplo inicial del modo actual
+    const savedXML = localStorage.getItem(getLSKey(modeRef.current));
+    const xmlToLoad = savedXML || getInitialXML(modeRef.current);
     try {
       const dom = Blockly.utils.xml.textToDom(xmlToLoad);
       Blockly.Xml.domToWorkspace(dom, workspace);
@@ -216,10 +272,10 @@ export default forwardRef(function BlockEditor({ onCodeChange }, ref) {
         event.type === Blockly.Events.BLOCK_MOVE ||
         event.type === Blockly.Events.FINISHED_LOADING
       ) {
-        // Persistir workspace en localStorage
+        // Persistir workspace en localStorage (clave según modo actual)
         try {
           const xmlDom = Blockly.Xml.workspaceToDom(workspace);
-          localStorage.setItem(LS_KEY, Blockly.Xml.domToPrettyText(xmlDom));
+          localStorage.setItem(getLSKey(modeRef.current), Blockly.Xml.domToPrettyText(xmlDom));
         } catch (_) {}
         emitCode(workspace);
       }
@@ -231,7 +287,8 @@ export default forwardRef(function BlockEditor({ onCodeChange }, ref) {
         if (event.newElementId) {
           const block = workspace.getBlockById(event.newElementId);
           if (block) {
-            setSelectedInfo(BLOCK_DESCRIPTIONS[block.type] ?? null);
+            const dict = modeRef.current === 'kids' ? KIDS_BLOCK_DESCRIPTIONS : BLOCK_DESCRIPTIONS;
+            setSelectedInfo(dict[block.type] ?? BLOCK_DESCRIPTIONS[block.type] ?? null);
           }
         } else {
           setSelectedInfo(null);
@@ -270,7 +327,7 @@ export default forwardRef(function BlockEditor({ onCodeChange }, ref) {
         ref={blocklyDiv}
         style={{ flex: 1, minHeight: 0 }}
       />
-      {selectedInfo && <BlockInfoPanel info={selectedInfo} />}
+      {selectedInfo && <BlockInfoPanel info={selectedInfo} mode={mode} />}
     </div>
   );
 });

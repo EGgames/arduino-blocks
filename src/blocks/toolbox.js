@@ -246,3 +246,195 @@ export const toolboxConfig = {
     },
   ],
 };
+
+// ── Toolbox para modo Niño / Kids — versión COMPLETA en español ───────────────
+export const kidsToolboxConfig = {
+  kind: 'categoryToolbox',
+  contents: [
+    {
+      kind: 'category',
+      name: '⚙️ Inicio',
+      colour: '210',
+      contents: [
+        { kind: 'block', type: 'kids_setup_loop' },
+        { kind: 'block', type: 'kids_comment' },
+        { kind: 'block', type: 'kids_define', fields: { NAME: 'LED_PIN', VALUE: '13' } },
+        { kind: 'block', type: 'kids_include', fields: { LIB: 'Wire' } },
+      ],
+    },
+    {
+      kind: 'category',
+      name: '💡 LED y Pines',
+      colour: '160',
+      contents: [
+        { kind: 'block', type: 'kids_pin_mode', fields: { PIN: 13, MODE: 'OUTPUT' } },
+        { kind: 'block', type: 'kids_digital_write', fields: { PIN: 13, VALUE: 'HIGH' } },
+        { kind: 'block', type: 'kids_digital_read', fields: { PIN: 2 } },
+      ],
+    },
+    {
+      kind: 'category',
+      name: '📊 Sensores',
+      colour: '160',
+      contents: [
+        {
+          kind: 'block', type: 'kids_analog_write', fields: { PIN: 9 },
+          inputs: { VALUE: { block: { type: 'math_number', fields: { NUM: 128 } } } },
+        },
+        { kind: 'block', type: 'kids_analog_read', fields: { PIN: 0 } },
+        { kind: 'block', type: 'kids_map' },
+        { kind: 'block', type: 'kids_constrain' },
+      ],
+    },
+    {
+      kind: 'category',
+      name: '⏱️ Tiempo',
+      colour: '120',
+      contents: [
+        {
+          kind: 'block', type: 'kids_delay',
+          inputs: { MS: { block: { type: 'math_number', fields: { NUM: 1000 } } } },
+        },
+        {
+          kind: 'block', type: 'kids_delay_micros',
+          inputs: { US: { block: { type: 'math_number', fields: { NUM: 100 } } } },
+        },
+        { kind: 'block', type: 'kids_millis' },
+        { kind: 'block', type: 'kids_micros' },
+      ],
+    },
+    {
+      kind: 'category',
+      name: '📡 Mensajes',
+      colour: '65',
+      contents: [
+        { kind: 'block', type: 'kids_serial_begin' },
+        {
+          kind: 'block', type: 'kids_serial_println',
+          inputs: { TEXT: { block: { type: 'text', fields: { TEXT: 'Hola Mundo' } } } },
+        },
+        {
+          kind: 'block', type: 'kids_serial_print',
+          inputs: { TEXT: { block: { type: 'text', fields: { TEXT: 'valor: ' } } } },
+        },
+        { kind: 'block', type: 'kids_serial_available' },
+        { kind: 'block', type: 'kids_serial_read' },
+      ],
+    },
+    {
+      kind: 'category',
+      name: '🔁 Repetir',
+      colour: '120',
+      contents: [
+        { kind: 'block', type: 'kids_for' },
+        { kind: 'block', type: 'kids_while' },
+        { kind: 'block', type: 'kids_do_while' },
+        { kind: 'block', type: 'kids_break' },
+        { kind: 'block', type: 'kids_continue' },
+      ],
+    },
+    {
+      kind: 'category',
+      name: '❓ Decisiones',
+      colour: '210',
+      contents: [
+        { kind: 'block', type: 'kids_if_simple' },
+        { kind: 'block', type: 'kids_if' },
+        { kind: 'block', type: 'kids_switch' },
+      ],
+    },
+    {
+      kind: 'category',
+      name: '📦 Variables',
+      colour: '330',
+      contents: [
+        {
+          kind: 'block', type: 'kids_variable_declare',
+          inputs: { VALUE: { block: { type: 'math_number', fields: { NUM: 0 } } } },
+        },
+        { kind: 'block', type: 'kids_variable_get' },
+        {
+          kind: 'block', type: 'kids_variable_set',
+          inputs: { VALUE: { block: { type: 'math_number', fields: { NUM: 0 } } } },
+        },
+        {
+          kind: 'block', type: 'kids_global_var',
+          inputs: { VALUE: { block: { type: 'math_number', fields: { NUM: 0 } } } },
+        },
+        {
+          kind: 'block', type: 'kids_const',
+          inputs: { VALUE: { block: { type: 'math_number', fields: { NUM: 0 } } } },
+        },
+        { kind: 'block', type: 'kids_array_declare' },
+        {
+          kind: 'block', type: 'kids_array_get',
+          inputs: { INDEX: { block: { type: 'math_number', fields: { NUM: 0 } } } },
+        },
+        {
+          kind: 'block', type: 'kids_array_set',
+          inputs: {
+            INDEX: { block: { type: 'math_number', fields: { NUM: 0 } } },
+            VALUE: { block: { type: 'math_number', fields: { NUM: 0 } } },
+          },
+        },
+      ],
+    },
+    {
+      kind: 'category',
+      name: '🔢 Números',
+      colour: '230',
+      contents: [
+        { kind: 'block', type: 'math_number', fields: { NUM: 0 } },
+        { kind: 'block', type: 'math_arithmetic' },
+        { kind: 'block', type: 'math_single' },
+        { kind: 'block', type: 'math_trig' },
+      ],
+    },
+    {
+      kind: 'category',
+      name: '⚖️ Lógica',
+      colour: '210',
+      contents: [
+        { kind: 'block', type: 'kids_compare' },
+        { kind: 'block', type: 'kids_logic' },
+        { kind: 'block', type: 'kids_not' },
+        { kind: 'block', type: 'logic_boolean' },
+        { kind: 'block', type: 'logic_compare' },
+        { kind: 'block', type: 'logic_operation' },
+        { kind: 'block', type: 'logic_negate' },
+      ],
+    },
+    {
+      kind: 'category',
+      name: '🔤 Texto',
+      colour: '160',
+      contents: [
+        { kind: 'block', type: 'text', fields: { TEXT: '' } },
+      ],
+    },
+    {
+      kind: 'category',
+      name: '🔊 Sonido',
+      colour: '290',
+      contents: [
+        {
+          kind: 'block', type: 'kids_tone', fields: { PIN: 8 },
+          inputs: { FREQ: { block: { type: 'math_number', fields: { NUM: 440 } } } },
+        },
+        { kind: 'block', type: 'kids_no_tone', fields: { PIN: 8 } },
+      ],
+    },
+    {
+      kind: 'category',
+      name: '🧩 Mis Bloques',
+      colour: '270',
+      contents: [
+        { kind: 'block', type: 'kids_function_define' },
+        { kind: 'block', type: 'kids_function_call' },
+        { kind: 'block', type: 'kids_function_call_expr' },
+        { kind: 'block', type: 'kids_return' },
+        { kind: 'block', type: 'kids_return_void' },
+      ],
+    },
+  ],
+};

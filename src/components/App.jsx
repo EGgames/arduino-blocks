@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
-  AppBar, Box, Button, Divider, IconButton, Snackbar, Alert,
+  AppBar, Box, Button, Chip, Divider, IconButton, Snackbar, Alert,
   Tab, Tabs, Toolbar, Tooltip, Typography,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -154,9 +154,12 @@ export default function App() {
 
       {/* AppBar */}
       <AppBar position="static" elevation={0} sx={{
-        background: 'linear-gradient(135deg, #0a1929 0%, #003d7a 60%, #00529b 100%)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        background: settings.mode === 'kids'
+          ? 'linear-gradient(135deg, #1b5e20 0%, #2e7d32 60%, #43a047 100%)'
+          : 'linear-gradient(135deg, #0a1929 0%, #003d7a 60%, #00529b 100%)',
+        borderBottom: settings.mode === 'kids' ? '3px solid #66bb6a' : '1px solid rgba(255,255,255,0.08)',
         zIndex: 10, flexShrink: 0,
+        transition: 'background 0.4s ease',
       }}>
         <Toolbar variant="dense" sx={{ gap: 1, minHeight: 44 }}>
           <IconButton color="inherit" edge="start" onClick={() => setSidebarOpen((v) => !v)} size="small"
@@ -176,28 +179,40 @@ export default function App() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}>
-              <CodeIcon sx={{ fontSize: 16 }} />
+              {settings.mode === 'kids' ? <span style={{ fontSize: 16 }}>🧩</span> : <CodeIcon sx={{ fontSize: 16 }} />}
             </Box>
             <Box>
-              <Typography variant="subtitle2" fontWeight="700" lineHeight={1.1} letterSpacing={0.8} sx={{ fontSize: 13 }}>
-                Arduino
+              <Typography variant="subtitle2" fontWeight="700" lineHeight={1.1} letterSpacing={0.8} sx={{ fontSize: settings.mode === 'kids' ? 14 : 13 }}>
+                {settings.mode === 'kids' ? '¡Hola!' : 'Arduino'}
               </Typography>
-              <Typography sx={{ fontSize: 9.5, color: 'rgba(255,255,255,0.6)', lineHeight: 1, letterSpacing: 1.2, textTransform: 'uppercase' }}>
-                Blocks IDE
+              <Typography sx={{ fontSize: 9.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1, letterSpacing: 1.2, textTransform: 'uppercase' }}>
+                {settings.mode === 'kids' ? 'Modo Niño 🎉' : 'Blocks IDE'}
               </Typography>
             </Box>
           </Box>
 
           <Divider orientation="vertical" flexItem sx={{ bgcolor: 'rgba(255,255,255,0.3)' }} />
 
-          <Tooltip title="Guardar codigo (.ino) [Ctrl+S]">
-            <Button color="inherit" startIcon={<SaveIcon />} size="small" onClick={handleSave}
-              sx={{ borderRadius: 1.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' }, fontSize: 12 }}>
-              Guardar
-            </Button>
-          </Tooltip>
+          {settings.mode !== 'kids' && (
+            <Tooltip title="Guardar codigo (.ino) [Ctrl+S]">
+              <Button color="inherit" startIcon={<SaveIcon />} size="small" onClick={handleSave}
+                sx={{ borderRadius: 1.5, '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' }, fontSize: 12 }}>
+                Guardar
+              </Button>
+            </Tooltip>
+          )}
 
-          {isElectron && (
+          {settings.mode === 'kids' && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mx: 1 }}>
+              {['1️⃣ Arrastra bloques', '2️⃣ Conecta tu Arduino', '3️⃣ Presiona Subir'].map((step) => (
+                <Typography key={step} sx={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.9)', letterSpacing: 0.3 }}>
+                  {step}
+                </Typography>
+              ))}
+            </Box>
+          )}
+
+          {isElectron && settings.mode !== 'kids' && (
             <Tooltip title="Abrir proyecto .ino">
               <Button color="inherit" startIcon={<FolderOpenIcon />} size="small" onClick={handleOpen}>
                 Abrir
@@ -207,11 +222,22 @@ export default function App() {
 
           <Box sx={{ flex: 1 }} />
 
-          <Tooltip title={isElectron ? 'Modo escritorio' : 'Solo edicion bloques/codigo'}>
-            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', mr: 1, fontSize: 11 }}>
-              {isElectron ? 'Electron' : 'Web'}
-            </Typography>
-          </Tooltip>
+          {settings.mode === 'kids' && (
+            <Tooltip title="Guardar mi programa [Ctrl+S]">
+              <Button color="inherit" startIcon={<SaveIcon />} size="small" onClick={handleSave}
+                sx={{ borderRadius: 2, bgcolor: 'rgba(255,255,255,0.15)', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' }, fontSize: 12, mr: 1 }}>
+                Guardar
+              </Button>
+            </Tooltip>
+          )}
+
+          {settings.mode !== 'kids' && (
+            <Tooltip title={isElectron ? 'Modo escritorio' : 'Solo edicion bloques/codigo'}>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', mr: 1, fontSize: 11 }}>
+                {isElectron ? 'Electron' : 'Web'}
+              </Typography>
+            </Tooltip>
+          )}
 
           <Tooltip title="Ayuda">
             <IconButton color="inherit" size="small">
@@ -236,10 +262,67 @@ export default function App() {
           <BlockEditor
             ref={blockEditorRef}
             onCodeChange={handleBlockCodeChange}
+            mode={settings.mode}
           />
         </Box>
 
-        {/* Divisor redimensionable con grip visual */}
+        {/* Sidebar lateral derecho en modo Niño */}
+        {settings.mode === 'kids' && (
+          <Box sx={{
+            width: 270, flexShrink: 0,
+            bgcolor: '#0a1a0a',
+            borderLeft: '3px solid #43a047',
+            display: 'flex', flexDirection: 'column',
+            overflow: 'hidden',
+          }}>
+            {/* Header del sidebar */}
+            <Box sx={{
+              bgcolor: '#1b5e20', px: 2, py: 1.5,
+              display: 'flex', flexDirection: 'column', gap: 0.3,
+            }}>
+              <Typography sx={{ fontSize: 16, fontWeight: 800, color: '#c8e6c9', letterSpacing: 0.3 }}>
+                🚀 Subir a tu Arduino
+              </Typography>
+              <Typography sx={{ fontSize: 11, color: 'rgba(200,230,201,0.65)' }}>
+                Conecta el cable USB primero
+              </Typography>
+            </Box>
+
+            {/* Panel de subida integrado (sin Paper flotante) */}
+            <Box sx={{ flex: 1, overflow: 'auto',
+              '& .MuiFormLabel-root': { color: 'rgba(200,230,201,0.8)' },
+              '& .MuiOutlinedInput-root': {
+                color: '#c8e6c9',
+                '& fieldset': { borderColor: 'rgba(102,187,106,0.5)' },
+                '&:hover fieldset': { borderColor: '#66bb6a' },
+              },
+              '& .MuiSelect-icon': { color: '#66bb6a' },
+              '& .MuiMenuItem-root': { color: '#111' },
+              '& .MuiIconButton-root': { color: '#66bb6a' },
+              '& .MuiButton-outlined': {
+                borderColor: '#66bb6a', color: '#a5d6a7',
+                '&:hover': { borderColor: '#a5d6a7', bgcolor: 'rgba(102,187,106,0.1)' },
+              },
+              '& .MuiButton-contained': {
+                bgcolor: '#2e7d32', color: '#fff',
+                '&:hover': { bgcolor: '#388e3c' },
+                '&.Mui-disabled': { bgcolor: 'rgba(46,125,50,0.3)', color: 'rgba(255,255,255,0.4)' },
+              },
+              '& .MuiTypography-subtitle2': { color: 'rgba(200,230,201,0.8)' },
+            }}>
+              <UploadPanel
+                flat
+                code={code}
+                defaultPort={settings.comPort}
+                defaultBoard={settings.board}
+              />
+            </Box>
+          </Box>
+        )}
+
+        {/* Divisor + panel derecho — ocultos en modo Niño */}
+        {settings.mode !== 'kids' && (
+          <>
         <Box
           onMouseDown={handleDividerMouseDown}
           sx={{
@@ -334,6 +417,9 @@ export default function App() {
             </Box>
           )}
         </Box>
+          </>
+        )}
+
       </Box>
 
       {/* Diálogo de configuración */}

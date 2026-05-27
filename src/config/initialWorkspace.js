@@ -44,3 +44,46 @@ export const INITIAL_XML = `
     </statement>
   </block>
 </xml>`;
+
+// ──────────────────────────────────────────────
+// XML inicial para el modo Niño (bloques en español)
+// Ejemplo: hacer parpadear el LED del pin 13
+// ──────────────────────────────────────────────
+export const KIDS_INITIAL_XML = `
+<xml xmlns="https://developers.google.com/blockly/xml">
+  <block type="kids_setup_loop" x="60" y="60">
+    <statement name="SETUP">
+      <block type="kids_pin_mode">
+        <field name="PIN">13</field>
+        <field name="MODE">OUTPUT</field>
+      </block>
+    </statement>
+    <statement name="LOOP">
+      <block type="kids_digital_write">
+        <field name="PIN">13</field>
+        <field name="VALUE">HIGH</field>
+        <next>
+          <block type="kids_delay">
+            <value name="MS">
+              <block type="math_number"><field name="NUM">1000</field></block>
+            </value>
+            <next>
+              <block type="kids_digital_write">
+                <field name="PIN">13</field>
+                <field name="VALUE">LOW</field>
+                <next>
+                  <block type="kids_delay">
+                    <value name="MS">
+                      <block type="math_number"><field name="NUM">1000</field></block>
+                    </value>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+  </block>
+</xml>`;
+

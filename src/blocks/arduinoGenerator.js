@@ -34,8 +34,14 @@ export class ArduinoGenerator extends Blockly.Generator {
   // ── Punto de entrada principal ─────────────────────────────────────────
 
   workspaceToCode(workspace) {
-    const setupLoopBlocks   = workspace.getBlocksByType('arduino_setup_loop');
-    const functionDefBlocks = workspace.getBlocksByType('arduino_function_define');
+    const setupLoopBlocks   = [
+      ...workspace.getBlocksByType('arduino_setup_loop'),
+      ...workspace.getBlocksByType('kids_setup_loop'),
+    ];
+    const functionDefBlocks = [
+      ...workspace.getBlocksByType('arduino_function_define'),
+      ...workspace.getBlocksByType('kids_function_define'),
+    ];
 
     if (setupLoopBlocks.length === 0 && functionDefBlocks.length === 0) {
       return '// Agrega el bloque "Setup/Loop" para comenzar\n';
@@ -43,7 +49,10 @@ export class ArduinoGenerator extends Blockly.Generator {
 
     // 0. #define directivas (antes de #include)
     let definesCode = '';
-    for (const b of workspace.getBlocksByType('arduino_define')) {
+    for (const b of [
+      ...workspace.getBlocksByType('arduino_define'),
+      ...workspace.getBlocksByType('kids_define'),
+    ]) {
       if (b.getSurroundParent()) continue;
       const name  = b.getFieldValue('NAME')  || 'MI_DEFINE';
       const value = b.getFieldValue('VALUE') || '';
@@ -53,7 +62,10 @@ export class ArduinoGenerator extends Blockly.Generator {
 
     // 1. #include directivas (solo bloques flotantes)
     let includesCode = '';
-    for (const b of workspace.getBlocksByType('arduino_include')) {
+    for (const b of [
+      ...workspace.getBlocksByType('arduino_include'),
+      ...workspace.getBlocksByType('kids_include'),
+    ]) {
       if (b.getSurroundParent()) continue;
       const lib = b.getFieldValue('LIB') || 'Wire';
       includesCode += `#include <${lib}.h>\n`;
@@ -62,21 +74,30 @@ export class ArduinoGenerator extends Blockly.Generator {
 
     // 2. Variables y constantes globales (solo bloques flotantes)
     let globalsCode = '';
-    for (const b of workspace.getBlocksByType('arduino_global_variable_declare')) {
+    for (const b of [
+      ...workspace.getBlocksByType('arduino_global_variable_declare'),
+      ...workspace.getBlocksByType('kids_global_var'),
+    ]) {
       if (b.getSurroundParent()) continue;
       const type  = b.getFieldValue('TYPE') || 'int';
       const name  = b.getFieldValue('NAME') || 'globalVar';
       const value = this.valueToCode(b, 'VALUE', this.ORDER_ASSIGNMENT) || '0';
       globalsCode += `${type} ${name} = ${value};\n`;
     }
-    for (const b of workspace.getBlocksByType('arduino_const_define')) {
+    for (const b of [
+      ...workspace.getBlocksByType('arduino_const_define'),
+      ...workspace.getBlocksByType('kids_const'),
+    ]) {
       if (b.getSurroundParent()) continue;
       const type  = b.getFieldValue('TYPE') || 'int';
       const name  = b.getFieldValue('NAME') || 'MY_CONST';
       const value = this.valueToCode(b, 'VALUE', this.ORDER_ASSIGNMENT) || '0';
       globalsCode += `const ${type} ${name} = ${value};\n`;
     }
-    for (const b of workspace.getBlocksByType('arduino_array_declare')) {
+    for (const b of [
+      ...workspace.getBlocksByType('arduino_array_declare'),
+      ...workspace.getBlocksByType('kids_array_declare'),
+    ]) {
       if (b.getSurroundParent()) continue;
       const type = b.getFieldValue('TYPE') || 'int';
       const name = b.getFieldValue('NAME') || 'miArray';
@@ -171,6 +192,9 @@ export function registerArduinoGenerators(gen) {
 
   fb['arduino_setup_loop'] = function (_block) {
     return ''; // generado directamente en workspaceToCode
+  };
+  fb['kids_setup_loop'] = function (_block) {
+    return ''; // generado directamente en workspaceToCode (igual que arduino_setup_loop)
   };
 
   // ── Pines ─────────────────────────────────────────────────────────────

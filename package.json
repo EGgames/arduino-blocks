@@ -1,6 +1,6 @@
 {
   "name": "arduino-blocks",
-  "version": "1.0.3-alpha",
+  "version": "1.1.0a",
   "description": "Programación por bloques para Arduino",
   "author": "Arduino Blocks",
   "main": "electron/main.js",
