@@ -271,6 +271,7 @@ export default function App() {
                 ref={blockEditorRef}
                 onCodeChange={handleBlockCodeChange}
                 mode={settings.mode}
+                isMobile
               />
             </Box>
 
@@ -286,35 +287,79 @@ export default function App() {
             </Box>
 
             {/* Vista: Herramientas */}
-            <Box sx={{ position: 'absolute', inset: 0, display: mobileView === 'tools' ? 'flex' : 'none', flexDirection: 'column', bgcolor: '#0d1b2e' }}>
-              <Tabs
-                value={bottomTab}
-                onChange={(_, v) => setBottomTab(v)}
-                variant="fullWidth"
-                TabIndicatorProps={{ style: { height: 2, backgroundColor: '#4fc3f7' } }}
-                sx={{
-                  minHeight: 48, flexShrink: 0,
-                  bgcolor: '#1e2535',
-                  '& .MuiTab-root': {
-                    minHeight: 48, fontSize: 13, textTransform: 'none', gap: 0.5,
-                    color: 'rgba(200,212,227,0.65)',
-                    '&.Mui-selected': { color: '#e0ecff' },
-                  },
-                }}
-              >
-                <Tab icon={<UploadIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Subir" value="upload" />
-                <Tab icon={<LibraryBooksIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Librerías" value="libraries" />
-                <Tab icon={<ExtensionIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Bloques" value="custom" />
-              </Tabs>
-              <Box sx={{ flex: 1, overflow: 'hidden' }}>
-                {bottomTab === 'upload'    && <UploadPanel code={code} defaultPort={settings.comPort} defaultBoard={settings.board} />}
-                {bottomTab === 'libraries' && (
-                  <LibraryPanel blockEditorRef={blockEditorRef} activeIncludes={activeIncludes} isDark={isDark} />
-                )}
-                {bottomTab === 'custom' && (
-                  <CustomBlocksPanel blockEditorRef={blockEditorRef} />
-                )}
-              </Box>
+            <Box sx={{ position: 'absolute', inset: 0, display: mobileView === 'tools' ? 'flex' : 'none', flexDirection: 'column',
+              bgcolor: settings.mode === 'kids' ? '#0a1a0a' : '#0d1b2e' }}>
+
+              {settings.mode === 'kids' ? (
+                /* ── KIDS: solo panel de subida con tema verde ───────────────── */
+                <>
+                  <Box sx={{ bgcolor: '#1b5e20', px: 2, py: 1.2, flexShrink: 0,
+                    borderBottom: '2px solid #43a047',
+                    display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box component="span" sx={{ fontSize: 20 }}>🚀</Box>
+                    <Box>
+                      <Typography sx={{ fontSize: 15, fontWeight: 800, color: '#c8e6c9', lineHeight: 1.1 }}>
+                        Subir a tu Arduino
+                      </Typography>
+                      <Typography sx={{ fontSize: 11, color: 'rgba(200,230,201,0.65)' }}>
+                        Conecta el cable USB primero
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ flex: 1, overflow: 'auto',
+                    '& .MuiFormLabel-root': { color: 'rgba(200,230,201,0.8)' },
+                    '& .MuiOutlinedInput-root': {
+                      color: '#c8e6c9',
+                      '& fieldset': { borderColor: 'rgba(102,187,106,0.5)' },
+                      '&:hover fieldset': { borderColor: '#66bb6a' },
+                    },
+                    '& .MuiSelect-icon': { color: '#66bb6a' },
+                    '& .MuiButton-outlined': {
+                      borderColor: '#66bb6a', color: '#a5d6a7',
+                      '&:hover': { borderColor: '#a5d6a7', bgcolor: 'rgba(102,187,106,0.1)' },
+                    },
+                    '& .MuiButton-contained': {
+                      bgcolor: '#2e7d32', color: '#fff',
+                      '&:hover': { bgcolor: '#388e3c' },
+                      '&.Mui-disabled': { bgcolor: 'rgba(46,125,50,0.3)', color: 'rgba(255,255,255,0.4)' },
+                    },
+                  }}>
+                    <UploadPanel flat code={code} defaultPort={settings.comPort} defaultBoard={settings.board} />
+                  </Box>
+                </>
+              ) : (
+                /* ── AVANZADO: tabs Upload / Librerías / Bloques personalizados ─── */
+                <>
+                  <Tabs
+                    value={bottomTab}
+                    onChange={(_, v) => setBottomTab(v)}
+                    variant="fullWidth"
+                    TabIndicatorProps={{ style: { height: 2, backgroundColor: '#4fc3f7' } }}
+                    sx={{
+                      minHeight: 48, flexShrink: 0,
+                      bgcolor: '#1e2535',
+                      '& .MuiTab-root': {
+                        minHeight: 48, fontSize: 13, textTransform: 'none', gap: 0.5,
+                        color: 'rgba(200,212,227,0.65)',
+                        '&.Mui-selected': { color: '#e0ecff' },
+                      },
+                    }}
+                  >
+                    <Tab icon={<UploadIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Subir" value="upload" />
+                    <Tab icon={<LibraryBooksIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Librerías" value="libraries" />
+                    <Tab icon={<ExtensionIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Bloques" value="custom" />
+                  </Tabs>
+                  <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                    {bottomTab === 'upload'    && <UploadPanel code={code} defaultPort={settings.comPort} defaultBoard={settings.board} />}
+                    {bottomTab === 'libraries' && (
+                      <LibraryPanel blockEditorRef={blockEditorRef} activeIncludes={activeIncludes} isDark={isDark} />
+                    )}
+                    {bottomTab === 'custom' && (
+                      <CustomBlocksPanel blockEditorRef={blockEditorRef} />
+                    )}
+                  </Box>
+                </>
+              )}
             </Box>
 
           </Box>

@@ -30,7 +30,7 @@ function initBlockly() {
   }
 }
 
-export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced' }, ref) {
+export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced', isMobile = false }, ref) {
   const blocklyDiv   = useRef(null);
   const workspaceRef = useRef(null);
   const skipEmit     = useRef(false);   // true mientras cargamos XML externamente
@@ -230,12 +230,17 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
     if (workspaceRef.current) return; // ya inicializado
 
     const isKids = modeRef.current === 'kids';
+    // Escala inicial: mayor en mobile para que los bloques sean más táctiles
+    const startScale = isMobile
+      ? (isKids ? 1.3 : 1.05)
+      : (isKids ? 1.0 : 0.85);
+
     const workspace = Blockly.inject(blocklyDiv.current, {
       toolbox: isKids ? kidsToolboxConfig : toolboxConfig,
       grid: { spacing: isKids ? 30 : 20, length: 3, colour: isKids ? '#b3d9ff' : '#ccc', snap: true },
-      zoom: { controls: true, wheel: true, startScale: isKids ? 1.0 : 0.85, maxScale: 3, minScale: 0.3 },
+      zoom: { controls: true, wheel: true, pinch: true, startScale, maxScale: 4, minScale: 0.3 },
+      move: { scrollbars: true, drag: true, wheel: true },
       trashcan: true,
-      scrollbars: true,
       theme: isKids ? getKidsTheme() : Blockly.Themes.Zelos,
     });
 
@@ -327,7 +332,7 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
         ref={blocklyDiv}
         style={{ flex: 1, minHeight: 0 }}
       />
-      {selectedInfo && <BlockInfoPanel info={selectedInfo} mode={mode} />}
+      {selectedInfo && <BlockInfoPanel info={selectedInfo} mode={mode} isMobile={isMobile} />}
     </div>
   );
 });
