@@ -56,6 +56,12 @@ describe('SettingsDialog — render', () => {
     expect(screen.getByText('Conexión')).toBeInTheDocument();
   });
 
+  test('muestra la sección de actualizaciones con su botón', () => {
+    render(<SettingsDialog open settings={DEFAULT_SETTINGS} onClose={jest.fn()} onSettingsChange={jest.fn()} />);
+    expect(screen.getByText('Actualizaciones')).toBeInTheDocument();
+    expect(screen.getByText('Comprobar actualizaciones')).toBeInTheDocument();
+  });
+
   test('muestra el tamaño de fuente actual', () => {
     render(
       <SettingsDialog

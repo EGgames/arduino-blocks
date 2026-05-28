@@ -415,9 +415,52 @@ function setupAutoUpdater() {
 // IPC: Buscar actualización manualmente
 ipcMain.handle('check-for-updates', async () => {
   if (isDev) return { checking: false, dev: true };
+
+  const cleanupAndResolveFactory = (resolve, timeoutId, handlers) => (payload) => {
+    clearTimeout(timeoutId);
+    autoUpdater.removeListener('update-available', handlers.onAvailable);
+    autoUpdater.removeListener('update-not-available', handlers.onNotAvailable);
+    autoUpdater.removeListener('error', handlers.onError);
+    resolve(payload);
+  };
+
   try {
-    await autoUpdater.checkForUpdates();
-    return { checking: true };
+    const result = await new Promise((resolve) => {
+      const handlers = {
+        onAvailable: null,
+        onNotAvailable: null,
+        onError: null,
+      };
+
+      const timeoutId = setTimeout(() => {
+        cleanupAndResolveFactory(resolve, timeoutId, handlers)({ checking: true, pending: true });
+      }, 15000);
+
+      handlers.onAvailable = () => {
+        cleanupAndResolveFactory(resolve, timeoutId, handlers)({ checking: false, available: true });
+      };
+
+      handlers.onNotAvailable = () => {
+        cleanupAndResolveFactory(resolve, timeoutId, handlers)({ checking: false, notAvailable: true });
+      };
+
+      handlers.onError = (err) => {
+        cleanupAndResolveFactory(resolve, timeoutId, handlers)({
+          checking: false,
+          error: err?.message || String(err),
+        });
+      };
+
+      autoUpdater.once('update-available', handlers.onAvailable);
+      autoUpdater.once('update-not-available', handlers.onNotAvailable);
+      autoUpdater.once('error', handlers.onError);
+
+      autoUpdater.checkForUpdates().catch((err) => {
+        cleanupAndResolveFactory(resolve, timeoutId, handlers)({ checking: false, error: err.message });
+      });
+    });
+
+    return result;
   } catch (err) {
     return { checking: false, error: err.message };
   }

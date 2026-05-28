@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Button, Divider, Drawer, FormControl, IconButton,
-  MenuItem, Select, Slider, Tooltip, Typography,
+  MenuItem, Select, Slider, Tooltip, Typography, Snackbar, Alert,
 } from '@mui/material';
 import CloseIcon            from '@mui/icons-material/Close';
 import RefreshIcon          from '@mui/icons-material/Refresh';
@@ -14,6 +14,7 @@ import PaletteIcon          from '@mui/icons-material/Palette';
 import TuneIcon             from '@mui/icons-material/Tune';
 import ChildCareIcon        from '@mui/icons-material/ChildCare';
 import CodeIcon             from '@mui/icons-material/Code';
+import SystemUpdateAltIcon  from '@mui/icons-material/SystemUpdateAlt';
 import { BOARDS } from '../data/boards';
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI?.isElectron;
@@ -58,6 +59,8 @@ const SELECT_SX = {
 export default function SettingsDialog({ open, onClose, settings, onSettingsChange }) {
   const [ports, setPorts]           = useState([]);
   const [loadingPorts, setLoading]  = useState(false);
+  const [checkingUpdates, setCheckingUpdates] = useState(false);
+  const [updateSnack, setUpdateSnack] = useState({ open: false, message: '', severity: 'info' });
 
   useEffect(() => {
     if (open && isElectron) refreshPorts();
@@ -77,6 +80,38 @@ export default function SettingsDialog({ open, onClose, settings, onSettingsChan
   };
 
   const set = (key, value) => onSettingsChange({ [key]: value });
+
+  const showUpdateSnack = (message, severity = 'info') => {
+    setUpdateSnack({ open: true, message, severity });
+  };
+
+  const checkForUpdates = async () => {
+    if (!isElectron) {
+      showUpdateSnack('La comprobación de actualizaciones solo está disponible en la app de escritorio.', 'info');
+      return;
+    }
+
+    setCheckingUpdates(true);
+    showUpdateSnack('Buscando actualizaciones...', 'info');
+
+    try {
+      const res = await window.electronAPI.checkForUpdates();
+
+      if (res?.dev) {
+        showUpdateSnack('Estás en modo desarrollo; las actualizaciones están deshabilitadas.', 'warning');
+      } else if (res?.available) {
+        showUpdateSnack('Se encontró una actualización disponible.', 'success');
+      } else if (res?.notAvailable) {
+        showUpdateSnack('No hay actualizaciones disponibles.', 'info');
+      } else if (res?.error) {
+        showUpdateSnack(`No se pudo comprobar actualizaciones: ${res.error}`, 'error');
+      }
+    } catch (e) {
+      showUpdateSnack('No se pudo comprobar actualizaciones.', 'error');
+    } finally {
+      setCheckingUpdates(false);
+    }
+  };
 
   return (
     <Drawer
@@ -281,6 +316,35 @@ export default function SettingsDialog({ open, onClose, settings, onSettingsChan
 
         </Section>
 
+        <Divider sx={{ borderColor: 'rgba(255,255,255,0.07)' }} />
+
+        {/* ── Actualizaciones ─────────────────────────────────────── */}
+        <Section icon={<SystemUpdateAltIcon sx={{ fontSize: 16, color: '#4fc3f7' }} />} title="Actualizaciones">
+          <Button
+            fullWidth
+            size="small"
+            onClick={checkForUpdates}
+            disabled={checkingUpdates}
+            startIcon={<SystemUpdateAltIcon sx={{ fontSize: 14 }} />}
+            sx={{
+              textTransform: 'none',
+              fontSize: 11.5,
+              py: 0.9,
+              borderRadius: 1.5,
+              border: '1px solid rgba(255,255,255,0.18)',
+              color: '#e0ecff',
+              '&:hover': { borderColor: 'rgba(255,255,255,0.4)', bgcolor: 'rgba(255,255,255,0.06)' },
+              '&.Mui-disabled': { color: 'rgba(255,255,255,0.35)', borderColor: 'rgba(255,255,255,0.08)' },
+            }}
+          >
+            {checkingUpdates ? 'Comprobando...' : 'Comprobar actualizaciones'}
+          </Button>
+
+          <Typography sx={{ fontSize: 10.5, color: 'rgba(255,255,255,0.4)', mt: 1 }}>
+            Si hay una nueva versión, se mostrará el diálogo de actualización.
+          </Typography>
+        </Section>
+
       </Box>
 
       {/* ── Footer ──────────────────────────────────────────────────── */}
@@ -293,6 +357,17 @@ export default function SettingsDialog({ open, onClose, settings, onSettingsChan
           Los cambios se guardan automáticamente
         </Typography>
       </Box>
+
+      <Snackbar
+        open={updateSnack.open}
+        autoHideDuration={3500}
+        onClose={() => setUpdateSnack((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity={updateSnack.severity} onClose={() => setUpdateSnack((s) => ({ ...s, open: false }))}>
+          {updateSnack.message}
+        </Alert>
+      </Snackbar>
     </Drawer>
   );
 }
