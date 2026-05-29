@@ -1,5 +1,19 @@
 import * as Blockly from 'blockly';
 
+function pinFieldValidator(value) {
+  const v = String(value ?? '').trim();
+  if (!v) return '13';
+
+  if (/^\d+$/.test(v)) {
+    const n = Number(v);
+    if (n < 0 || n > 53) return null;
+    return String(n);
+  }
+
+  if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(v)) return v;
+  return null;
+}
+
 // ──────────────────────────────────────────────
 // Definición de bloques Arduino personalizados
 // ──────────────────────────────────────────────
@@ -27,7 +41,7 @@ export function defineArduinoBlocks() {
     init() {
       this.appendDummyInput()
         .appendField('pinMode')
-        .appendField(new Blockly.FieldNumber(13, 0, 53), 'PIN')
+        .appendField(new Blockly.FieldTextInput('13', pinFieldValidator), 'PIN')
         .appendField(new Blockly.FieldDropdown([
           ['OUTPUT', 'OUTPUT'],
           ['INPUT', 'INPUT'],
@@ -45,7 +59,7 @@ export function defineArduinoBlocks() {
     init() {
       this.appendDummyInput()
         .appendField('digitalWrite pin')
-        .appendField(new Blockly.FieldNumber(13, 0, 53), 'PIN')
+        .appendField(new Blockly.FieldTextInput('13', pinFieldValidator), 'PIN')
         .appendField(new Blockly.FieldDropdown([
           ['HIGH', 'HIGH'],
           ['LOW', 'LOW'],
@@ -75,7 +89,7 @@ export function defineArduinoBlocks() {
       this.appendValueInput('VALUE')
         .setCheck('Number')
         .appendField('analogWrite pin')
-        .appendField(new Blockly.FieldNumber(9, 0, 13), 'PIN')
+        .appendField(new Blockly.FieldTextInput('9', pinFieldValidator), 'PIN')
         .appendField('valor');
       this.setPreviousStatement(true, null);
       this.setNextStatement(true, null);

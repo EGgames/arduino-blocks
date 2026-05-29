@@ -283,13 +283,13 @@ function callOrAssignBlock(expr) {
 
   switch (name) {
     case 'pinMode':
-      return `<block type="arduino_pin_mode" id="${nid()}"><field name="PIN">${numArg(args[0], 13)}</field><field name="MODE">${modeArg(args[1])}</field></block>`;
+      return `<block type="arduino_pin_mode" id="${nid()}"><field name="PIN">${identArg(args[0], '13')}</field><field name="MODE">${modeArg(args[1])}</field></block>`;
 
     case 'digitalWrite':
-      return `<block type="arduino_digital_write" id="${nid()}"><field name="PIN">${numArg(args[0], 13)}</field><field name="VALUE">${highLowArg(args[1])}</field></block>`;
+      return `<block type="arduino_digital_write" id="${nid()}"><field name="PIN">${identArg(args[0], '13')}</field><field name="VALUE">${highLowArg(args[1])}</field></block>`;
 
     case 'analogWrite':
-      return `<block type="arduino_analog_write" id="${nid()}"><field name="PIN">${numArg(args[0], 9)}</field>${valueWrap('VALUE', args[1])}</block>`;
+      return `<block type="arduino_analog_write" id="${nid()}"><field name="PIN">${identArg(args[0], '9')}</field>${valueWrap('VALUE', args[1])}</block>`;
 
     case 'delay':
       return `<block type="arduino_delay" id="${nid()}">${valueWrap('MS', args[0])}</block>`;

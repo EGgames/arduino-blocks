@@ -108,6 +108,11 @@ describe('App — render inicial', () => {
     expect(screen.queryByText('Abrir')).toBeInTheDocument();
   });
 
+  test('muestra el botón "Nuevo" junto a acciones de archivo', () => {
+    render(<App />);
+    expect(screen.queryByText('Nuevo')).toBeInTheDocument();
+  });
+
   test('renderiza el BlockEditor (mock)', () => {
     render(<App />);
     expect(screen.getByTestId('block-editor')).toBeInTheDocument();
@@ -279,6 +284,21 @@ describe('App — editor de código', () => {
     // Verificar que el código fue actualizado (Wire aparece como "incluida" en LibraryPanel)
     await waitFor(() => {
       expect(screen.getByTestId('library-counter').textContent).toMatch(/1 incluida/);
+    });
+  });
+
+  test('Nuevo proyecto con cambios sin guardar abre diálogo de confirmación', async () => {
+    render(<App />);
+    const editor = screen.getByTestId('monaco-editor');
+    fireEvent.change(editor, {
+      target: { value: 'void setup(){}\nvoid loop(){ digitalWrite(13, HIGH); }' },
+    });
+
+    fireEvent.click(screen.getByText('Nuevo'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
+      expect(screen.getByText('Guardar y continuar')).toBeInTheDocument();
     });
   });
 });

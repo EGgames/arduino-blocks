@@ -1,5 +1,19 @@
 import * as Blockly from 'blockly';
 
+function pinFieldValidator(value) {
+  const v = String(value ?? '').trim();
+  if (!v) return '13';
+
+  if (/^\d+$/.test(v)) {
+    const n = Number(v);
+    if (n < 0 || n > 53) return null;
+    return String(n);
+  }
+
+  if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(v)) return v;
+  return null;
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Tema visual para el modo Niño: bloques más grandes, colores amigables
 // ──────────────────────────────────────────────────────────────────────────────
@@ -86,7 +100,7 @@ export function defineKidsBlocks() {
     init() {
       this.appendDummyInput()
         .appendField('🔌 Configurar pin')
-        .appendField(new Blockly.FieldNumber(13, 0, 53), 'PIN');
+        .appendField(new Blockly.FieldTextInput('13', pinFieldValidator), 'PIN');
       this.appendDummyInput()
         .appendField('como')
         .appendField(new Blockly.FieldDropdown([
@@ -106,7 +120,7 @@ export function defineKidsBlocks() {
     init() {
       this.appendDummyInput()
         .appendField('💡 Pin')
-        .appendField(new Blockly.FieldNumber(13, 0, 53), 'PIN')
+        .appendField(new Blockly.FieldTextInput('13', pinFieldValidator), 'PIN')
         .appendField(new Blockly.FieldDropdown([
           ['🟢 ENCENDIDO', 'HIGH'],
           ['⚫ APAGADO', 'LOW'],
@@ -135,7 +149,7 @@ export function defineKidsBlocks() {
     init() {
       this.appendDummyInput()
         .appendField('〰️ Brillo pin')
-        .appendField(new Blockly.FieldNumber(9, 0, 13), 'PIN');
+        .appendField(new Blockly.FieldTextInput('9', pinFieldValidator), 'PIN');
       this.appendValueInput('VALUE')
         .setCheck('Number')
         .appendField('intensidad (0-255)');

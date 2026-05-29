@@ -72,6 +72,17 @@ describe('Pipeline: setup → XML', () => {
     expect(xml).toContain('<field name="MODE">OUTPUT</field>');
   });
 
+  test('genera arduino_pin_mode manteniendo nombre de variable global', () => {
+    const xml = stripIds(codeToXML(`
+      int ledPin = 13;
+      void setup() { pinMode(ledPin, OUTPUT); }
+      void loop() {}
+    `));
+    expect(xml).toContain('type="arduino_pin_mode"');
+    expect(xml).toContain('<field name="PIN">ledPin</field>');
+    expect(xml).toContain('<field name="MODE">OUTPUT</field>');
+  });
+
   test('genera arduino_serial_begin con 9600', () => {
     const xml = stripIds(codeToXML(code));
     expect(xml).toContain('type="arduino_serial_begin"');
@@ -109,10 +120,31 @@ describe('Pipeline: loop → XML', () => {
     expect(xml).toContain('<field name="VALUE">HIGH</field>');
   });
 
+  test('genera arduino_digital_write manteniendo nombre de variable global como pin', () => {
+    const xml = stripIds(codeToXML(`
+      int ledPin = 13;
+      void setup() {}
+      void loop() { digitalWrite(ledPin, HIGH); }
+    `));
+    expect(xml).toContain('type="arduino_digital_write"');
+    expect(xml).toContain('<field name="PIN">ledPin</field>');
+    expect(xml).toContain('<field name="VALUE">HIGH</field>');
+  });
+
   test('genera arduino_analog_write con pin 9', () => {
     const xml = stripIds(codeToXML(code));
     expect(xml).toContain('type="arduino_analog_write"');
     expect(xml).toContain('<field name="PIN">9</field>');
+  });
+
+  test('genera arduino_analog_write manteniendo nombre de variable global como pin', () => {
+    const xml = stripIds(codeToXML(`
+      int pwmPin = 9;
+      void setup() {}
+      void loop() { analogWrite(pwmPin, 128); }
+    `));
+    expect(xml).toContain('type="arduino_analog_write"');
+    expect(xml).toContain('<field name="PIN">pwmPin</field>');
   });
 
   test('genera arduino_delay con 500ms', () => {

@@ -3,10 +3,12 @@ import {
   AppBar, Box, BottomNavigation, BottomNavigationAction,
   Button, Chip, Divider, IconButton, Snackbar, Alert,
   Tab, Tabs, Toolbar, Tooltip, Typography, useMediaQuery,
+  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SaveIcon from '@mui/icons-material/Save';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import CodeIcon from '@mui/icons-material/Code';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -22,6 +24,7 @@ import CustomBlocksPanel from './CustomBlocksPanel';
 import SettingsDialog from './SettingsDialog';
 import UpdaterDialog from './UpdaterDialog';
 import { codeToXML } from '../utils/xmlGenerator';
+import { INITIAL_XML, KIDS_INITIAL_XML } from '../config/initialWorkspace';
 import { useBidirectionalSync } from '../hooks/useBidirectionalSync';
 import { useSettings } from '../hooks/useSettings';
 
@@ -36,6 +39,9 @@ export default function App() {
   const [snack, setSnack]             = useState({ open: false, message: '', severity: 'info' });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileView, setMobileView] = useState('blocks');
+  const [lastSavedCode, setLastSavedCode] = useState('');
+  const [confirmUnsavedOpen, setConfirmUnsavedOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
 
   const [settings, setSettings, isDark] = useSettings();
   const isMobile = useMediaQuery('(max-width: 960px)');
@@ -52,8 +58,10 @@ export default function App() {
   const draggingBottomRef   = useRef(false);
   const dragStartYRef       = useRef(0);
   const dragStartHeightRef  = useRef(0);
+  const initialBaselineSetRef = useRef(false);
 
   const showSnack = (message, severity = 'info') => setSnack({ open: true, message, severity });
+  const hasUnsavedChanges = code !== lastSavedCode;
 
   // Librerías actualmente incluidas (extraídas del código generado)
   const activeIncludes = useMemo(() => {
@@ -65,23 +73,52 @@ export default function App() {
   const { syncStatus, handleBlockCodeChange, handleCodeEditorChange, parseAndUpdateBlocks } =
     useBidirectionalSync(blockEditorRef, setCode);
 
+  const handleBlockCodeChangeWithBaseline = useCallback((newCode) => {
+    if (!initialBaselineSetRef.current) {
+      setLastSavedCode(newCode);
+      initialBaselineSetRef.current = true;
+    }
+    handleBlockCodeChange(newCode);
+  }, [handleBlockCodeChange]);
+
   // Actualizar toolbox cuando cambian las librerías activas
   useEffect(() => {
     blockEditorRef.current?.updateToolboxForLibraries?.(activeIncludes);
   }, [activeIncludes]);
 
+  const createNewProject = useCallback(() => {
+    parseAndUpdateBlocks.cancel?.();
+    const initialXml = settings.mode === 'kids' ? KIDS_INITIAL_XML : INITIAL_XML;
+    blockEditorRef.current?.loadXML(initialXml);
+
+    // Esperar a que Blockly termine de cargar para tomar código consistente
+    setTimeout(() => {
+      const freshCode = blockEditorRef.current?.getCode?.() || '';
+      setCode(freshCode);
+      setLastSavedCode(freshCode);
+      showSnack('Nuevo proyecto creado', 'success');
+    }, 120);
+  }, [parseAndUpdateBlocks, settings.mode]);
+
   // Guardar
   const handleSave = useCallback(async () => {
     if (isElectron) {
       const result = await window.electronAPI.saveFile({ content: code, defaultName: 'mi_sketch.ino' });
-      if (result.success) showSnack('Guardado: ' + result.filePath, 'success');
+      if (result.success) {
+        setLastSavedCode(code);
+        showSnack('Guardado: ' + result.filePath, 'success');
+        return true;
+      }
+      return false;
     } else {
       const blob = new Blob([code], { type: 'text/plain' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'mi_sketch.ino';
       a.click();
+      setLastSavedCode(code);
       showSnack('Descargado como .ino', 'success');
+      return true;
     }
   }, [code]);
 
@@ -112,12 +149,13 @@ export default function App() {
   }, [handleSave]);
 
   // Abrir
-  const handleOpen = async () => {
+  const handleOpen = useCallback(async () => {
     if (isElectron) {
       const result = await window.electronAPI.openFile();
       if (!result.success) return;
       const ino = result.content;
       setCode(ino);
+      setLastSavedCode(ino);
       parseAndUpdateBlocks.cancel?.();
       const xml = codeToXML(ino);
       if (xml) blockEditorRef.current?.loadXML(xml);
@@ -132,6 +170,7 @@ export default function App() {
         try {
           const text = await file.text();
           setCode(text);
+          setLastSavedCode(text);
           parseAndUpdateBlocks.cancel?.();
           const xml = codeToXML(text);
           if (xml) blockEditorRef.current?.loadXML(xml);
@@ -142,7 +181,43 @@ export default function App() {
       };
       input.click();
     }
-  };
+  }, [parseAndUpdateBlocks]);
+
+  const runProtectedAction = useCallback((action) => {
+    if (hasUnsavedChanges) {
+      setPendingAction(action);
+      setConfirmUnsavedOpen(true);
+      return;
+    }
+    if (action === 'open') handleOpen();
+    if (action === 'new') createNewProject();
+  }, [createNewProject, handleOpen, hasUnsavedChanges]);
+
+  const handleOpenRequest = useCallback(() => {
+    runProtectedAction('open');
+  }, [runProtectedAction]);
+
+  const handleNewProjectRequest = useCallback(() => {
+    runProtectedAction('new');
+  }, [runProtectedAction]);
+
+  const handleContinueWithoutSaving = useCallback(() => {
+    const action = pendingAction;
+    setConfirmUnsavedOpen(false);
+    setPendingAction(null);
+    if (action === 'open') handleOpen();
+    if (action === 'new') createNewProject();
+  }, [createNewProject, handleOpen, pendingAction]);
+
+  const handleSaveAndContinue = useCallback(async () => {
+    const ok = await handleSave();
+    if (!ok) return;
+    const action = pendingAction;
+    setConfirmUnsavedOpen(false);
+    setPendingAction(null);
+    if (action === 'open') handleOpen();
+    if (action === 'new') createNewProject();
+  }, [createNewProject, handleOpen, handleSave, pendingAction]);
 
   // Divisor redimensionable (horizontal)
   const handleDividerMouseDown = (e) => {
@@ -259,8 +334,16 @@ export default function App() {
 
           {settings.mode !== 'kids' && (
             <Tooltip title="Abrir proyecto .ino">
-              <Button color="inherit" startIcon={<FolderOpenIcon />} size="small" onClick={handleOpen}>
+              <Button color="inherit" startIcon={<FolderOpenIcon />} size="small" onClick={handleOpenRequest}>
                 Abrir
+              </Button>
+            </Tooltip>
+          )}
+
+          {settings.mode !== 'kids' && (
+            <Tooltip title="Crear un proyecto nuevo">
+              <Button color="inherit" startIcon={<NoteAddIcon />} size="small" onClick={handleNewProjectRequest}>
+                Nuevo
               </Button>
             </Tooltip>
           )}
@@ -317,7 +400,7 @@ export default function App() {
             <Box sx={{ position: 'absolute', inset: 0, display: mobileView === 'blocks' ? 'flex' : 'none', flexDirection: 'column' }}>
               <BlockEditor
                 ref={blockEditorRef}
-                onCodeChange={handleBlockCodeChange}
+                onCodeChange={handleBlockCodeChangeWithBaseline}
                 mode={settings.mode}
                 isDark={isDark}
                 isMobile
@@ -443,7 +526,7 @@ export default function App() {
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
           <BlockEditor
             ref={blockEditorRef}
-            onCodeChange={handleBlockCodeChange}
+            onCodeChange={handleBlockCodeChangeWithBaseline}
             mode={settings.mode}
             isDark={isDark}
           />
@@ -629,6 +712,20 @@ export default function App() {
         </Alert>
       </Snackbar>
 
+      <Dialog open={confirmUnsavedOpen} onClose={() => setConfirmUnsavedOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Cambios sin guardar</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            El proyecto tiene cambios sin guardar. ¿Querés guardar antes de continuar?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmUnsavedOpen(false)}>Cancelar</Button>
+          <Button onClick={handleContinueWithoutSaving} color="warning">Continuar sin guardar</Button>
+          <Button onClick={handleSaveAndContinue} variant="contained">Guardar y continuar</Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Barra de estado inferior */}
       <Box sx={{
         bgcolor: '#0a1929', color: 'rgba(255,255,255,0.55)',
@@ -648,7 +745,7 @@ export default function App() {
         </Box>
         <Box sx={{ flex: 1 }} />
         <Typography sx={{ fontSize: 'inherit', color: 'inherit', opacity: 0.4 }}>
-          Arduino Blocks IDE v1.1.1
+          Arduino Blocks IDE v1.1.2
         </Typography>
       </Box>
     </Box>
