@@ -805,7 +805,7 @@ export default function App() {
         </Box>
         <Box sx={{ flex: 1 }} />
         <Typography sx={{ fontSize: 'inherit', color: 'inherit', opacity: 0.4 }}>
-          Arduino Blocks IDE v1.1.2
+          Arduino Blocks IDE v1.2.0
         </Typography>
       </Box>
     </Box>
