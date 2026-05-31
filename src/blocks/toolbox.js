@@ -426,6 +426,19 @@ export const kidsToolboxConfig = {
     },
     {
       kind: 'category',
+      name: '🌈 Luces de Colores',
+      colour: '0',
+      contents: [
+        { kind: 'block', type: 'kids_rgb_led' },
+        { kind: 'block', type: 'kids_neopixel_setup', fields: { PIN: 6, NUM: 8 } },
+        { kind: 'block', type: 'kids_neopixel_brightness', fields: { BRIGHTNESS: 50 } },
+        { kind: 'block', type: 'kids_neopixel_color', fields: { PIXEL: 0, R: 255, G: 0, B: 0 } },
+        { kind: 'block', type: 'kids_neopixel_show' },
+        { kind: 'block', type: 'kids_neopixel_clear' },
+      ],
+    },
+    {
+      kind: 'category',
       name: '🧩 Mis Bloques',
       colour: '270',
       contents: [

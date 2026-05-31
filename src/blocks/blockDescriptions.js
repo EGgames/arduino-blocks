@@ -664,4 +664,48 @@ export const KIDS_BLOCK_DESCRIPTIONS = {
     example: 'Si el valor es incorrecto → terminar bloque (no hacer nada más).',
     tip: '💡 Útil para salir de un bloque propio antes de llegar al final.',
   },
+
+  // ── LEDs RGB y NeoPixel ───────────────────────────────────────────────────
+  kids_rgb_led: {
+    emoji: '🌈',
+    title: 'LED de Colores (RGB)',
+    description: 'Enciende un LED de tres colores. Mezcla Rojo, Verde y Azul para hacer cualquier color del arcoíris. 0 es apagado y 255 es lo más brillante.',
+    example: 'Rojo=255 Verde=0 Azul=0 → luz roja. Rojo=0 Verde=0 Azul=255 → luz azul.',
+    tip: '💡 Necesitas conectar cada pin del LED a un pin PWM (~) de tu Arduino y una resistencia de 220Ω.',
+  },
+  kids_neopixel_setup: {
+    emoji: '✨',
+    title: 'Preparar Tira de Luces',
+    description: 'Prepara una tira de LEDs de colores NeoPixel para usarla. Dile cuántos LEDs tiene y a qué pin está conectada. Ponlo en ⚙️ Preparar.',
+    example: 'Pin 6, 8 LEDs → la tira en el pin 6 tiene 8 luces de colores listas.',
+    tip: '💡 Necesitas la librería "Adafruit NeoPixel". Se agrega automáticamente al generar el código.',
+  },
+  kids_neopixel_brightness: {
+    emoji: '🔆',
+    title: 'Brillo de la Tira',
+    description: 'Ajusta cuán brillante es toda la tira de luces. 0 es totalmente apagada y 255 es el máximo brillo (muy intenso).',
+    example: 'Brillo=50 es suave y bonito. Brillo=255 es muy brillante.',
+    tip: '💡 Ponlo en ⚙️ Preparar, justo después de "Preparar tira de luces".',
+  },
+  kids_neopixel_color: {
+    emoji: '🎨',
+    title: 'Color de una Luz',
+    description: 'Elige el color de una de las luces de la tira. El número 0 es la primera luz. Mezcla Rojo, Verde y Azul (0-255) para el color que quieras.',
+    example: 'Luz 0 → Rojo=255 Verde=0 Azul=0 → la primera luz se pone roja.',
+    tip: '💡 Después de poner los colores, usa "Mostrar luces" para que cambien de verdad.',
+  },
+  kids_neopixel_show: {
+    emoji: '💡',
+    title: 'Mostrar Luces',
+    description: 'Aplica todos los colores que pusiste en las luces. Sin este bloque, las luces no cambian aunque hayas elegido colores.',
+    example: 'Pones colores → Mostrar luces → las luces cambian de color.',
+    tip: '💡 Siempre termina con este bloque cuando quieras que cambien los LEDs.',
+  },
+  kids_neopixel_clear: {
+    emoji: '🌑',
+    title: 'Apagar Todas las Luces',
+    description: 'Apaga todos los LEDs de la tira de colores de una sola vez.',
+    example: 'Apagar todas las luces → la tira queda completamente oscura.',
+    tip: '💡 Este bloque también llama a "Mostrar luces" automáticamente, así que no hace falta ponerlo después.',
+  },
 };

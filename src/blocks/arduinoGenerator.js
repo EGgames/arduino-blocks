@@ -70,6 +70,20 @@ export class ArduinoGenerator extends Blockly.Generator {
       const lib = b.getFieldValue('LIB') || 'Wire';
       includesCode += `#include <${lib}.h>\n`;
     }
+
+    // Detectar bloques NeoPixel kids → agregar include y global strip automáticamente
+    const neopixelSetupBlocks = workspace.getBlocksByType('kids_neopixel_setup');
+    let neopixelGlobal = '';
+    if (neopixelSetupBlocks.length > 0) {
+      if (!includesCode.includes('Adafruit_NeoPixel')) {
+        includesCode += '#include <Adafruit_NeoPixel.h>\n';
+      }
+      const setupB = neopixelSetupBlocks[0];
+      const pin = setupB.getFieldValue('PIN') || '6';
+      const num = setupB.getFieldValue('NUM') || '8';
+      neopixelGlobal = `Adafruit_NeoPixel strip(${num}, ${pin}, NEO_GRB + NEO_KHZ800);\n`;
+    }
+
     if (includesCode) includesCode += '\n';
 
     // 2. Variables y constantes globales (solo bloques flotantes)
@@ -140,6 +154,7 @@ export class ArduinoGenerator extends Blockly.Generator {
     let code = '';
     code += definesCode;
     code += includesCode;
+    code += neopixelGlobal;
     code += globalsCode;
     code += libGlobalsCode;
     code += functionsCode;

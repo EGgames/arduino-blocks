@@ -12,7 +12,7 @@ import { BOARDS } from '../data/boards';
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI?.isElectron;
 
-export default function UploadPanel({ code, defaultPort = '', defaultBoard = 'arduino:avr:uno', flat = false }) {
+export default function UploadPanel({ code, defaultPort = '', defaultBoard = 'arduino:avr:uno', flat = false, onUploadSuccess }) {
   const [ports, setPorts] = useState([]);
   const [selectedPort, setSelectedPort] = useState(defaultPort);
   const [selectedBoard, setSelectedBoard] = useState(defaultBoard);
@@ -83,6 +83,7 @@ export default function UploadPanel({ code, defaultPort = '', defaultBoard = 'ar
         fqbn: selectedBoard,
       });
       showSnack(result.success ? 'Código subido exitosamente ✅' : 'Error al subir ❌', result.success ? 'success' : 'error');
+      if (result.success && onUploadSuccess) onUploadSuccess();
     } catch (e) {
       showSnack('Error: ' + e.message, 'error');
     } finally {

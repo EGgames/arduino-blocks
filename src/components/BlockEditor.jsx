@@ -172,6 +172,12 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
       try { return arduinoGenerator.workspaceToCode(workspaceRef.current); } catch { return ''; }
     },
 
+    /** Retorna el número de bloques en el workspace */
+    getBlockCount() {
+      if (!workspaceRef.current) return 0;
+      try { return workspaceRef.current.getAllBlocks(false).length; } catch { return 0; }
+    },
+
     /**
      * Actualiza el toolbox añadiendo/quitando categorías de librerías según las
      * que estén activas en el workspace (#include presentes).

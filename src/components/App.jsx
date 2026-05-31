@@ -23,6 +23,11 @@ import LibraryPanel from './LibraryPanel';
 import CustomBlocksPanel from './CustomBlocksPanel';
 import SettingsDialog from './SettingsDialog';
 import UpdaterDialog from './UpdaterDialog';
+import KidsProjectsPanel from './KidsProjectsPanel';
+import KidsAchievementsPanel from './KidsAchievementsPanel';
+import KidsTutorial from './KidsTutorial';
+import KidsHelpPanel from './KidsHelpPanel';
+import { useKidsAchievements } from '../hooks/useKidsAchievements';
 import { codeToXML } from '../utils/xmlGenerator';
 import { INITIAL_XML, KIDS_INITIAL_XML } from '../config/initialWorkspace';
 import { useBidirectionalSync } from '../hooks/useBidirectionalSync';
@@ -45,6 +50,8 @@ export default function App() {
 
   const [settings, setSettings, isDark] = useSettings();
   const isMobile = useMediaQuery('(max-width: 960px)');
+  const [kidsSidebarTab, setKidsSidebarTab] = useState('upload');
+  const { badges, unlock: unlockBadge, newBadge, clearNewBadge } = useKidsAchievements();
 
   // Aplicar clase de tema al documento
   useEffect(() => {
@@ -79,7 +86,18 @@ export default function App() {
       initialBaselineSetRef.current = true;
     }
     handleBlockCodeChange(newCode);
-  }, [handleBlockCodeChange]);
+
+    // Logros por cantidad de bloques en kids mode
+    if (settings.mode === 'kids') {
+      const blockCount = blockEditorRef.current?.getBlockCount?.() ?? 0;
+      if (blockCount >= 1)  unlockBadge('primer_bloque');
+      if (blockCount >= 5)  unlockBadge('cinco_bloques');
+      if (blockCount >= 10) unlockBadge('diez_bloques');
+      if (blockCount >= 20) unlockBadge('veinte_bloques');
+      if (newCode.includes('Serial.print')) unlockBadge('serial');
+      if (newCode.includes('strip.setPixelColor') || newCode.includes('strip.begin')) unlockBadge('neopixel');
+    }
+  }, [handleBlockCodeChange, settings.mode, unlockBadge]);
 
   // Actualizar toolbox cuando cambian las librerías activas
   useEffect(() => {
@@ -374,12 +392,6 @@ export default function App() {
             </Tooltip>
           )}
 
-          <Tooltip title="Ayuda">
-            <IconButton color="inherit" size="small">
-              <HelpOutlineIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-
           <Tooltip title="Configuración">
             <IconButton color="inherit" size="small" onClick={() => setSettingsOpen(true)}
               sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' } }}>
@@ -535,27 +547,41 @@ export default function App() {
         {/* Sidebar lateral derecho en modo Niño */}
         {settings.mode === 'kids' && (
           <Box sx={{
-            width: 270, flexShrink: 0,
+            width: 280, flexShrink: 0,
             bgcolor: '#0a1a0a',
             borderLeft: '3px solid #43a047',
             display: 'flex', flexDirection: 'column',
             overflow: 'hidden',
           }}>
-            {/* Header del sidebar */}
-            <Box sx={{
-              bgcolor: '#1b5e20', px: 2, py: 1.5,
-              display: 'flex', flexDirection: 'column', gap: 0.3,
-            }}>
-              <Typography sx={{ fontSize: 16, fontWeight: 800, color: '#c8e6c9', letterSpacing: 0.3 }}>
-                🚀 Subir a tu Arduino
-              </Typography>
-              <Typography sx={{ fontSize: 11, color: 'rgba(200,230,201,0.65)' }}>
-                Conecta el cable USB primero
-              </Typography>
+            {/* Tabs de navegación kids */}
+            <Box sx={{ bgcolor: '#1b5e20', flexShrink: 0 }}>
+              <Tabs
+                value={kidsSidebarTab}
+                onChange={(_, v) => {
+                  setKidsSidebarTab(v);
+                  if (v === 'help') unlockBadge('ayuda');
+                }}
+                variant="scrollable"
+                scrollButtons="auto"
+                sx={{
+                  minHeight: 40,
+                  '& .MuiTab-root': { color: 'rgba(200,230,201,0.6)', minHeight: 40, fontSize: '0.65rem', fontWeight: 700, p: '6px 8px', minWidth: 0 },
+                  '& .Mui-selected': { color: '#a5d6a7' },
+                  '& .MuiTabs-indicator': { bgcolor: '#66bb6a', height: 3 },
+                }}
+              >
+                <Tab label="🚀 Subir"     value="upload"   />
+                <Tab label="🗂️ Proyectos" value="projects" />
+                <Tab label="🏆 Logros"   value="badges"   />
+                <Tab label="🎓 Tutorial" value="tutorial" />
+                <Tab label="❓ Ayuda"    value="help"     />
+              </Tabs>
             </Box>
 
-            {/* Panel de subida integrado (sin Paper flotante) */}
-            <Box sx={{ flex: 1, overflow: 'auto',
+            {/* Contenido del tab activo */}
+            <Box sx={{
+              flex: 1, overflow: 'auto',
+              bgcolor: kidsSidebarTab === 'upload' ? '#0a1a0a' : '#fafafa',
               '& .MuiFormLabel-root': { color: 'rgba(200,230,201,0.8)' },
               '& .MuiOutlinedInput-root': {
                 color: '#c8e6c9',
@@ -576,12 +602,46 @@ export default function App() {
               },
               '& .MuiTypography-subtitle2': { color: 'rgba(200,230,201,0.8)' },
             }}>
-              <UploadPanel
-                flat
-                code={code}
-                defaultPort={settings.comPort}
-                defaultBoard={settings.board}
-              />
+              {kidsSidebarTab === 'upload' && (
+                <UploadPanel
+                  flat
+                  code={code}
+                  defaultPort={settings.comPort}
+                  defaultBoard={settings.board}
+                  onUploadSuccess={() => unlockBadge('primera_carga')}
+                />
+              )}
+              {kidsSidebarTab === 'projects' && (
+                <KidsProjectsPanel
+                  onLoadProject={(xml, title) => {
+                    blockEditorRef.current?.loadXML(xml);
+                    unlockBadge('primer_proyecto');
+                    if (title === 'Semáforo')           unlockBadge('semaforo');
+                    if (title === 'Melodía')             unlockBadge('musica');
+                    if (title === 'Arcoíris de Luces')  unlockBadge('neopixel');
+                    if (title === 'Piano de Botones')    unlockBadge('piano');
+                    if (title === 'Código Morse')        unlockBadge('morse');
+                    if (title === 'Alarma con Sensor')   unlockBadge('alarma');
+                    if (title === 'Dado Electrónico')    unlockBadge('dado');
+                    if (title === 'Control de Brillo')   unlockBadge('brillo');
+                    if (title === 'LED Termómetro')      unlockBadge('termometro');
+                    showSnack(`Proyecto "${title}" cargado 🎉`, 'success');
+                  }}
+                />
+              )}
+              {kidsSidebarTab === 'badges' && (
+                <KidsAchievementsPanel
+                  badges={badges}
+                  newBadge={newBadge}
+                  onClearNewBadge={clearNewBadge}
+                />
+              )}
+              {kidsSidebarTab === 'tutorial' && (
+                <KidsTutorial />
+              )}
+              {kidsSidebarTab === 'help' && (
+                <KidsHelpPanel />
+              )}
             </Box>
           </Box>
         )}

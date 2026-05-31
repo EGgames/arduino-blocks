@@ -728,6 +728,105 @@ export function defineKidsBlocks() {
       this.setTooltip('Termina el bloque propio en este punto sin devolver nada.');
     },
   };
+
+  // ── RGB y NeoPixel ────────────────────────────────────────────────────────
+
+  // LED de color RGB (pines separados R, G, B)
+  Blockly.Blocks['kids_rgb_led'] = {
+    init() {
+      this.appendDummyInput()
+        .appendField('🌈 LED de colores');
+      this.appendDummyInput()
+        .appendField('Rojo (pin)')
+        .appendField(new Blockly.FieldNumber(9, 0, 53), 'PIN_R')
+        .appendField('intensidad')
+        .appendField(new Blockly.FieldNumber(255, 0, 255), 'VAL_R');
+      this.appendDummyInput()
+        .appendField('Verde (pin)')
+        .appendField(new Blockly.FieldNumber(10, 0, 53), 'PIN_G')
+        .appendField('intensidad')
+        .appendField(new Blockly.FieldNumber(0, 0, 255), 'VAL_G');
+      this.appendDummyInput()
+        .appendField('Azul (pin)')
+        .appendField(new Blockly.FieldNumber(11, 0, 53), 'PIN_B')
+        .appendField('intensidad')
+        .appendField(new Blockly.FieldNumber(0, 0, 255), 'VAL_B');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(0);
+      this.setTooltip('Enciende un LED RGB con la mezcla de colores que elijas (0=apagado, 255=máximo). Conecta cada pin a R, G y B del LED.');
+    },
+  };
+
+  // Preparar tira NeoPixel (Adafruit NeoPixel)
+  Blockly.Blocks['kids_neopixel_setup'] = {
+    init() {
+      this.appendDummyInput()
+        .appendField('✨ Preparar tira de luces')
+        .appendField(new Blockly.FieldNumber(6, 0, 53), 'PIN')
+        .appendField('pin,')
+        .appendField(new Blockly.FieldNumber(8, 1, 300), 'NUM')
+        .appendField('LEDs');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(0);
+      this.setTooltip('Configura una tira de LEDs de colores NeoPixel. Pon este bloque en ⚙️ Preparar.');
+    },
+  };
+
+  // Poner color a un pixel NeoPixel
+  Blockly.Blocks['kids_neopixel_color'] = {
+    init() {
+      this.appendDummyInput()
+        .appendField('🎨 Luz número')
+        .appendField(new Blockly.FieldNumber(0, 0, 299), 'PIXEL')
+        .appendField('→ Rojo')
+        .appendField(new Blockly.FieldNumber(255, 0, 255), 'R')
+        .appendField('Verde')
+        .appendField(new Blockly.FieldNumber(0, 0, 255), 'G')
+        .appendField('Azul')
+        .appendField(new Blockly.FieldNumber(0, 0, 255), 'B');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(0);
+      this.setTooltip('Elige el color de una luz de la tira. 0 es la primera. Mezcla Rojo, Verde y Azul para hacer cualquier color.');
+    },
+  };
+
+  // Mostrar cambios NeoPixel
+  Blockly.Blocks['kids_neopixel_show'] = {
+    init() {
+      this.appendDummyInput().appendField('💡 Mostrar luces');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(0);
+      this.setTooltip('Aplica los colores que elegiste. Sin este bloque los LEDs no cambian.');
+    },
+  };
+
+  // Apagar todos los NeoPixels
+  Blockly.Blocks['kids_neopixel_clear'] = {
+    init() {
+      this.appendDummyInput().appendField('🌑 Apagar todas las luces');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(0);
+      this.setTooltip('Apaga todos los LEDs de la tira de colores.');
+    },
+  };
+
+  // Brillo general de la tira
+  Blockly.Blocks['kids_neopixel_brightness'] = {
+    init() {
+      this.appendDummyInput()
+        .appendField('🔆 Brillo de la tira')
+        .appendField(new Blockly.FieldNumber(50, 0, 255), 'BRIGHTNESS');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(0);
+      this.setTooltip('Ajusta el brillo de toda la tira (0=apagado, 255=máximo). Úsalo en ⚙️ Preparar después de preparar la tira.');
+    },
+  };
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -815,4 +914,34 @@ export function registerKidsGenerators(gen) {
   fb['kids_function_call_expr'] = (b) => fb['arduino_function_call_expr'](b);
   fb['kids_return']             = (b) => fb['arduino_return'](b);
   fb['kids_return_void']        = (b) => fb['arduino_return_void'](b);
+
+  // RGB LED (pines separados)
+  fb['kids_rgb_led'] = (b) => {
+    const pinR = b.getFieldValue('PIN_R') || '9';
+    const pinG = b.getFieldValue('PIN_G') || '10';
+    const pinB = b.getFieldValue('PIN_B') || '11';
+    const valR = b.getFieldValue('VAL_R') ?? '255';
+    const valG = b.getFieldValue('VAL_G') ?? '0';
+    const valB = b.getFieldValue('VAL_B') ?? '0';
+    return `analogWrite(${pinR}, ${valR});\nanalogWrite(${pinG}, ${valG});\nanalogWrite(${pinB}, ${valB});\n`;
+  };
+
+  // NeoPixel — la declaración global y el #include se generan en workspaceToCode
+  // Este bloque solo emite strip.begin() para colocarlo en setup()
+  fb['kids_neopixel_setup'] = () => 'strip.begin();\n';
+
+  fb['kids_neopixel_color'] = (b) => {
+    const pixel = b.getFieldValue('PIXEL') ?? '0';
+    const r     = b.getFieldValue('R')     ?? '255';
+    const g     = b.getFieldValue('G')     ?? '0';
+    const blue  = b.getFieldValue('B')     ?? '0';
+    return `strip.setPixelColor(${pixel}, strip.Color(${r}, ${g}, ${blue}));\n`;
+  };
+
+  fb['kids_neopixel_show']       = () => 'strip.show();\n';
+  fb['kids_neopixel_clear']      = () => 'strip.clear();\nstrip.show();\n';
+  fb['kids_neopixel_brightness'] = (b) => {
+    const br = b.getFieldValue('BRIGHTNESS') ?? '50';
+    return `strip.setBrightness(${br});\n`;
+  };
 }
