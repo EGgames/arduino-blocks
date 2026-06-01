@@ -1,6 +1,6 @@
 {
   "name": "arduino-blocks",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Programación por bloques para Arduino",
   "author": "Arduino Blocks",
   "main": "electron/main.js",
@@ -68,6 +68,7 @@
         "dmg",
         "zip"
       ],
+      "artifactName": "Arduino-Blocks-${version}-${arch}-${os}.${ext}",
       "extraResources": [
         {
           "from": "tools/mac/",
@@ -80,6 +81,7 @@
     },
     "linux": {
       "target": "AppImage",
+      "artifactName": "Arduino-Blocks-${version}-${arch}-${os}.${ext}",
       "extraResources": [
         {
           "from": "tools/linux/",

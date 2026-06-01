@@ -22,7 +22,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
     titleBarStyle: 'default',
-    title: 'Arduino Blocks v1.2.0',
+    title: `Arduino Blocks v${app.getVersion()}`,
   });
 
   if (isDev) {
