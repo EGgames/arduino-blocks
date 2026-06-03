@@ -1,6 +1,6 @@
 {
   "name": "arduino-blocks",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Programación por bloques para Arduino",
   "author": "Arduino Blocks",
   "main": "electron/main.js",
@@ -42,6 +42,7 @@
   "build": {
     "appId": "com.arduinoblocks.app",
     "productName": "Arduino Blocks",
+    "afterSign": "scripts/after-sign-mac.js",
     "extends": null,
     "files": [
       "build/**/*",
@@ -68,7 +69,6 @@
         "dmg",
         "zip"
       ],
-      "identity": "-",
       "artifactName": "Arduino-Blocks-${version}-${arch}-${os}.${ext}",
       "extraResources": [
         {
