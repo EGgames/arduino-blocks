@@ -170,6 +170,7 @@ jobs:
       - name: Package Electron (DMG + ZIP)
         run: npx electron-builder --mac dmg zip --publish never
         env:
+          CSC_NAME: "-"
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - uses: actions/upload-artifact@v4
