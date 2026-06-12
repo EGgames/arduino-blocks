@@ -55,8 +55,28 @@ public class CodeEditorPage extends PageObject {
 
     @Step("Verificar que el codigo contiene '{0}'")
     public boolean codeContains(String text) {
-        String content = getEditorContent();
+        String content = waitForEditorContent();
         return content.contains(text);
+    }
+
+    /**
+     * Monaco se carga de forma asincrona (muestra "Cargando editor..." mientras tanto),
+     * por lo que getEditorContent() puede devolver vacio justo despues de abrir la app.
+     * Reintenta hasta que el modelo tenga contenido o se agote el tiempo de espera.
+     */
+    private String waitForEditorContent() {
+        long deadline = System.currentTimeMillis() + 15000;
+        String content = getEditorContent();
+        while (content.isEmpty() && System.currentTimeMillis() < deadline) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+            content = getEditorContent();
+        }
+        return content;
     }
 
     @Step("Verificar que el editor es editable")
