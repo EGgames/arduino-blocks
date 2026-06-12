@@ -28,6 +28,9 @@
  *   arduino_compare           OP=field  A=value  B=value  → output
  *   arduino_logic             OP=field  A=value  B=value  → output
  *   arduino_not               VALUE=value  → output
+ *   arduino_modulo            A=value  B=value  → output (operador %)
+ *   arduino_bitwise           OP=field (&|^<<>>)  A=value  B=value  → output
+ *   arduino_bitwise_not       VALUE=value  → output (operador ~)
  */
 
 import { parseArduinoCode } from './codeParser';
@@ -91,13 +94,20 @@ function exprBlock(expr) {
       if (op === '&&' || op === '||') {
         return `<block type="arduino_logic" id="${nid()}"><field name="OP">${op === '&&' ? '&&' : '||'}</field>${valueWrap('A',left)}${valueWrap('B',right)}</block>`;
       }
-      const opMap = { '+':'ADD', '-':'MINUS', '*':'MULTIPLY', '/':'DIVIDE', '%':'POWER' };
+      if (op === '%') {
+        return `<block type="arduino_modulo" id="${nid()}">${valueWrap('A',left)}${valueWrap('B',right)}</block>`;
+      }
+      if (['&','|','^','<<','>>'].includes(op)) {
+        return `<block type="arduino_bitwise" id="${nid()}"><field name="OP">${esc(op)}</field>${valueWrap('A',left)}${valueWrap('B',right)}</block>`;
+      }
+      const opMap = { '+':'ADD', '-':'MINUS', '*':'MULTIPLY', '/':'DIVIDE' };
       return `<block type="math_arithmetic" id="${nid()}"><field name="OP">${opMap[op]||'ADD'}</field>${valueWrap('A',left)}${valueWrap('B',right)}</block>`;
     }
 
     case 'unop': {
       const { op, operand } = expr;
       if (op === '!')   return `<block type="arduino_not" id="${nid()}">${valueWrap('VALUE',operand)}</block>`;
+      if (op === '~')   return `<block type="arduino_bitwise_not" id="${nid()}">${valueWrap('VALUE',operand)}</block>`;
       if (op === 'neg') return `<block type="math_arithmetic" id="${nid()}"><field name="OP">MINUS</field>${valueWrap('A',{type:'num',value:0})}${valueWrap('B',operand)}</block>`;
       return exprBlock(operand); // ++/-- como expresión: ignorar el operador
     }

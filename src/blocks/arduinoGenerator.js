@@ -438,6 +438,33 @@ export function registerArduinoGenerators(gen) {
     return [`constrain(${v}, ${min}, ${max})`, gen.ORDER_ATOMIC];
   };
 
+  // ── Operadores del lenguaje C: módulo y bit a bit ───────────────────────
+
+  fb['arduino_modulo'] = function (block) {
+    const a = gen.valueToCode(block, 'A', gen.ORDER_NONE) || '0';
+    const b = gen.valueToCode(block, 'B', gen.ORDER_NONE) || '1';
+    return [`(${a} % ${b})`, gen.ORDER_MULTIPLICATIVE];
+  };
+
+  fb['arduino_bitwise'] = function (block) {
+    const op = block.getFieldValue('OP');
+    const a  = gen.valueToCode(block, 'A', gen.ORDER_NONE) || '0';
+    const b  = gen.valueToCode(block, 'B', gen.ORDER_NONE) || '0';
+    const orders = {
+      '&':  gen.ORDER_BITWISE_AND,
+      '|':  gen.ORDER_BITWISE_OR,
+      '^':  gen.ORDER_BITWISE_XOR,
+      '<<': gen.ORDER_SHIFT,
+      '>>': gen.ORDER_SHIFT,
+    };
+    return [`(${a} ${op} ${b})`, orders[op] ?? gen.ORDER_NONE];
+  };
+
+  fb['arduino_bitwise_not'] = function (block) {
+    const value = gen.valueToCode(block, 'VALUE', gen.ORDER_NONE) || '0';
+    return [`~(${value})`, gen.ORDER_UNARY_PREFIX];
+  };
+
   // ── Audio ─────────────────────────────────────────────────────────────
 
   fb['arduino_tone'] = function (block) {

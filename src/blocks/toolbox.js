@@ -192,6 +192,9 @@ export const toolboxConfig = {
         { kind: 'block', type: 'math_arithmetic' },
         { kind: 'block', type: 'math_single' },
         { kind: 'block', type: 'math_trig' },
+        { kind: 'block', type: 'arduino_modulo' },
+        { kind: 'block', type: 'arduino_bitwise' },
+        { kind: 'block', type: 'arduino_bitwise_not' },
       ],
     },
     {

@@ -262,6 +262,30 @@ export const BLOCK_DESCRIPTIONS = {
     code: 'int vel = constrain(velocidad, 0, 255);\n// vel nunca será < 0 ni > 255',
   },
 
+  arduino_modulo: {
+    title: '➗  % (módulo / resto)',
+    description:
+      'Calcula el resto de dividir A entre B. Sirve para saber si un número es par/impar, o para que un contador "dé la vuelta" al llegar a un límite.',
+    code: 'int resto = 7 % 2; // resto = 1\nif (i % 2 == 0) { /* i es par */ }',
+    tip: 'i % tamaño hace que i vuelva a 0 al llegar a "tamaño" (animaciones, ciclos, etc.).',
+  },
+
+  arduino_bitwise: {
+    title: '🔢  Operadores bit a bit',
+    description:
+      'Trabaja con los bits individuales de un número: AND (&), OR (|), XOR (^) y desplazamientos (<<, >>). Muy usado para registros, máscaras de bits y banderas.',
+    code: 'int mascara = valor & 0x0F;\nint doble   = valor << 1; // multiplica por 2\nint mitad   = valor >> 1; // divide por 2',
+    tip: '<< n multiplica por 2^n, >> n divide por 2^n (para enteros).',
+  },
+
+  arduino_bitwise_not: {
+    title: '🔁  ~ (NOT bit a bit)',
+    description:
+      'Invierte cada bit de un número: los 0 se vuelven 1 y los 1 se vuelven 0 (complemento a uno).',
+    code: 'int inverso = ~valor;',
+    tip: 'No confundir con el NOT lógico (!): ~5 no es lo mismo que !5.',
+  },
+
   // ── Audio ─────────────────────────────────────────────────
   arduino_tone: {
     title: '🔊  tone()',

@@ -327,6 +327,52 @@ export function defineArduinoBlocks() {
     },
   };
 
+  // ── % módulo (resto de división) ──────────────
+  Blockly.Blocks['arduino_modulo'] = {
+    init() {
+      this.appendValueInput('A').setCheck('Number');
+      this.appendValueInput('B')
+        .setCheck('Number')
+        .appendField('% (resto de)');
+      this.setInputsInline(true);
+      this.setOutput(true, 'Number');
+      this.setColour(230);
+      this.setTooltip('Calcula el resto de la división entre dos números (operador %)');
+    },
+  };
+
+  // ── Operadores bit a bit (&, |, ^, <<, >>) ────
+  Blockly.Blocks['arduino_bitwise'] = {
+    init() {
+      this.appendValueInput('A').setCheck('Number');
+      this.appendValueInput('B')
+        .setCheck('Number')
+        .appendField(new Blockly.FieldDropdown([
+          ['AND (&)', '&'],
+          ['OR (|)', '|'],
+          ['XOR (^)', '^'],
+          ['Desplazar izq. (<<)', '<<'],
+          ['Desplazar der. (>>)', '>>'],
+        ]), 'OP');
+      this.setInputsInline(true);
+      this.setOutput(true, 'Number');
+      this.setColour(230);
+      this.setTooltip('Operación a nivel de bits: AND, OR, XOR o desplazamiento de bits');
+    },
+  };
+
+  // ── NOT bit a bit (~) ─────────────────────────
+  Blockly.Blocks['arduino_bitwise_not'] = {
+    init() {
+      this.appendValueInput('VALUE')
+        .setCheck('Number')
+        .appendField('~ (NOT bit a bit)');
+      this.setOutput(true, 'Number');
+      this.setColour(230);
+      this.setTooltip('Invierte todos los bits de un número (complemento a uno, operador ~)');
+    },
+  };
+
   // ── millis ───────────────────────────────────
   Blockly.Blocks['arduino_millis'] = {
     init() {
