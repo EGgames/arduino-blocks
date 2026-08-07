@@ -9,11 +9,29 @@ import { defineKidsBlocks, registerKidsGenerators, getKidsTheme, getArduinoDarkT
 import { toolboxConfig, kidsToolboxConfig } from '../blocks/toolbox';
 import { registerLibraryBlocks, buildLibraryToolboxCategory, buildFallbackLibraryToolboxCategory } from '../blocks/libraryBlocks';
 import { INITIAL_XML, KIDS_INITIAL_XML } from '../config/initialWorkspace';
+import { migrateWorkspaceXml } from '../utils/xmlMigration';
+import { convertWorkspaceXmlToMode } from '../utils/modeConversion';
 
-const LS_KEY_ADVANCED = 'arduino-blocks-workspace';
-const LS_KEY_KIDS     = 'arduino-blocks-workspace-kids';
-const getLSKey = (mode) => mode === 'kids' ? LS_KEY_KIDS : LS_KEY_ADVANCED;
+// Ambos modos comparten el MISMO workspace: cambiar de modo solo traduce los
+// bloques, nunca carga otro proyecto. LS_KEY_LEGACY_KIDS existe para recuperar
+// los proyectos guardados por versiones anteriores, que sí usaban dos espacios.
+const LS_KEY = 'arduino-blocks-workspace';
+const LS_KEY_LEGACY_KIDS = 'arduino-blocks-workspace-kids';
 const getInitialXML = (mode) => mode === 'kids' ? KIDS_INITIAL_XML : INITIAL_XML;
+
+/** Prepara un XML para cargarlo: migra el formato antiguo y lo traduce al modo */
+const prepareXML = (xml, mode) => convertWorkspaceXmlToMode(migrateWorkspaceXml(xml), mode);
+
+/** XML guardado para el modo indicado (con respaldo al workspace kids heredado) */
+function loadSavedXML(mode) {
+  const guardado = localStorage.getItem(LS_KEY);
+  if (guardado) return guardado;
+  if (mode === 'kids') {
+    const heredado = localStorage.getItem(LS_KEY_LEGACY_KIDS);
+    if (heredado) return heredado;
+  }
+  return null;
+}
 
 // Registrar bloques built-in de Blockly (math, logic, text...)
 Blockly.common.defineBlocks(blocks);
@@ -89,34 +107,37 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
     }
   };
 
-  // Sincronizar modeRef: guardar workspace actual, cargar el nuevo y cambiar tema
+  // Cambio de modo: se conserva el MISMO programa y solo se traducen los bloques
+  // a su equivalente del otro modo (el código C++ generado no varía).
   useEffect(() => {
     const ws = workspaceRef.current;
     if (!ws) return;
-
-    // Guardar workspace del modo anterior antes de cambiar
-    try {
-      const oldKey = getLSKey(modeRef.current);
-      const xmlDom = Blockly.Xml.workspaceToDom(ws);
-      localStorage.setItem(oldKey, Blockly.Xml.domToPrettyText(xmlDom));
-    } catch (_) {}
+    if (modeRef.current === mode) return;
 
     modeRef.current = mode;
 
-    // Cargar workspace del nuevo modo
-    const savedXML = localStorage.getItem(getLSKey(mode));
-    const xmlToLoad = savedXML || getInitialXML(mode);
+    // Punto de partida: lo que hay ahora en pantalla, no un proyecto guardado
+    let xmlActual;
+    try {
+      xmlActual = Blockly.Xml.domToPrettyText(Blockly.Xml.workspaceToDom(ws));
+    } catch (_) {
+      xmlActual = loadSavedXML(mode) || getInitialXML(mode);
+    }
+
     try {
       skipEmit.current = true;
       ws.clear();
-      const dom = Blockly.utils.xml.textToDom(xmlToLoad);
+      const dom = Blockly.utils.xml.textToDom(prepareXML(xmlActual, mode));
       Blockly.Xml.domToWorkspace(dom, ws);
+      try {
+        localStorage.setItem(LS_KEY, Blockly.Xml.domToPrettyText(Blockly.Xml.workspaceToDom(ws)));
+      } catch (_) {}
       setTimeout(() => {
         ws.zoomToFit();
         skipEmit.current = false;
       }, 100);
     } catch (e) {
-      console.warn('[BlockEditor] Error cargando workspace para modo:', mode, e);
+      console.warn('[BlockEditor] Error convirtiendo el workspace al modo:', mode, e);
       skipEmit.current = false;
     }
 
@@ -142,7 +163,7 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
       try {
         skipEmit.current = true;
         workspaceRef.current.clear();
-        const dom = Blockly.utils.xml.textToDom(xmlString);
+        const dom = Blockly.utils.xml.textToDom(prepareXML(xmlString, modeRef.current));
         Blockly.Xml.domToWorkspace(dom, workspaceRef.current);
         // Ajustar vista a los bloques cargados
         setTimeout(() => {
@@ -296,10 +317,10 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
     workspaceRef.current = workspace;
 
     // Cargar workspace guardado en localStorage, o el ejemplo inicial del modo actual
-    const savedXML = localStorage.getItem(getLSKey(modeRef.current));
+    const savedXML = loadSavedXML(modeRef.current);
     const xmlToLoad = savedXML || getInitialXML(modeRef.current);
     try {
-      const dom = Blockly.utils.xml.textToDom(xmlToLoad);
+      const dom = Blockly.utils.xml.textToDom(prepareXML(xmlToLoad, modeRef.current));
       Blockly.Xml.domToWorkspace(dom, workspace);
     } catch (e) {
       console.warn('[BlockEditor] Error cargando XML guardado, usando inicial:', e);
@@ -329,7 +350,7 @@ export default forwardRef(function BlockEditor({ onCodeChange, mode = 'advanced'
         // Persistir workspace en localStorage (clave según modo actual)
         try {
           const xmlDom = Blockly.Xml.workspaceToDom(workspace);
-          localStorage.setItem(getLSKey(modeRef.current), Blockly.Xml.domToPrettyText(xmlDom));
+          localStorage.setItem(LS_KEY, Blockly.Xml.domToPrettyText(xmlDom));
         } catch (_) {}
         emitCode(workspace);
       }

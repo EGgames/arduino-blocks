@@ -6,8 +6,6 @@ import {
   DialogContent,
   DialogTitle,
   LinearProgress,
-  Snackbar,
-  Alert,
   Typography,
   Box,
 } from '@mui/material';
@@ -24,10 +22,6 @@ export default function UpdaterDialog() {
   const [updateInfo, setUpdateInfo] = useState(null); // { version, releaseNotes, releaseDate }
   const [progress, setProgress] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
-  const [snack, setSnack] = useState({ open: false, message: '', severity: 'info' });
-
-  const showSnack = (message, severity = 'info') =>
-    setSnack({ open: true, message, severity });
 
   const handleDownload = useCallback(() => {
     setState('downloading');
@@ -44,18 +38,6 @@ export default function UpdaterDialog() {
   const handleDismiss = useCallback(() => {
     setState('idle');
     setUpdateInfo(null);
-  }, []);
-
-  const handleCheckManually = useCallback(async () => {
-    if (!isElectron) {
-      showSnack('El verificador de actualizaciones solo está disponible en la aplicación de escritorio.', 'info');
-      return;
-    }
-    showSnack('Buscando actualizaciones...', 'info');
-    const res = await window.electronAPI.checkForUpdates();
-    if (res?.dev) {
-      showSnack('Estás en modo desarrollo — las actualizaciones se deshabilitan.', 'warning');
-    }
   }, []);
 
   useEffect(() => {
@@ -102,15 +84,6 @@ export default function UpdaterDialog() {
         <DialogActions>
           <Button onClick={handleDismiss}>Cerrar</Button>
         </DialogActions>
-        <Snackbar
-          open={snack.open}
-          autoHideDuration={3500}
-          onClose={() => setSnack((s) => ({ ...s, open: false }))}
-        >
-          <Alert severity={snack.severity} onClose={() => setSnack((s) => ({ ...s, open: false }))}>
-            {snack.message}
-          </Alert>
-        </Snackbar>
       </Dialog>
     );
   }
@@ -118,57 +91,46 @@ export default function UpdaterDialog() {
   // Dialog de actualización disponible
   if (state === 'available') {
     return (
-      <>
-        <Dialog open maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SystemUpdateAltIcon color="primary" />
-            Nueva versión disponible — v{updateInfo?.version}
-          </DialogTitle>
-          <DialogContent>
-            <Typography variant="body2" gutterBottom>
-              Hay una nueva versión de Arduino Blocks. ¿Deseas descargarla e instalarla ahora?
-            </Typography>
-            {updateInfo?.releaseNotes && (
-              <Box
-                sx={{
-                  mt: 1.5,
-                  p: 1.5,
-                  bgcolor: 'action.hover',
-                  borderRadius: 1,
-                  maxHeight: 180,
-                  overflowY: 'auto',
-                  fontSize: '0.8rem',
-                  fontFamily: 'monospace',
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
-                {typeof updateInfo.releaseNotes === 'string'
-                  ? updateInfo.releaseNotes
-                  : updateInfo.releaseNotes
-                      ?.map?.((n) => `${n.version}: ${n.note}`)
-                      .join('\n')}
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleDismiss} color="inherit">
-              Más tarde
-            </Button>
-            <Button onClick={handleDownload} variant="contained" color="primary">
-              Descargar e instalar
-            </Button>
-          </DialogActions>
-        </Dialog>
-        <Snackbar
-          open={snack.open}
-          autoHideDuration={3500}
-          onClose={() => setSnack((s) => ({ ...s, open: false }))}
-        >
-          <Alert severity={snack.severity} onClose={() => setSnack((s) => ({ ...s, open: false }))}>
-            {snack.message}
-          </Alert>
-        </Snackbar>
-      </>
+      <Dialog open maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <SystemUpdateAltIcon color="primary" />
+          Nueva versión disponible — v{updateInfo?.version}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" gutterBottom>
+            Hay una nueva versión de Arduino Blocks. ¿Deseas descargarla e instalarla ahora?
+          </Typography>
+          {updateInfo?.releaseNotes && (
+            <Box
+              sx={{
+                mt: 1.5,
+                p: 1.5,
+                bgcolor: 'action.hover',
+                borderRadius: 1,
+                maxHeight: 180,
+                overflowY: 'auto',
+                fontSize: '0.8rem',
+                fontFamily: 'monospace',
+                whiteSpace: 'pre-wrap',
+              }}
+            >
+              {typeof updateInfo.releaseNotes === 'string'
+                ? updateInfo.releaseNotes
+                : updateInfo.releaseNotes
+                    ?.map?.((n) => `${n.version}: ${n.note}`)
+                    .join('\n')}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDismiss} color="inherit">
+            Más tarde
+          </Button>
+          <Button onClick={handleDownload} variant="contained" color="primary">
+            Descargar e instalar
+          </Button>
+        </DialogActions>
+      </Dialog>
     );
   }
 
@@ -213,16 +175,6 @@ export default function UpdaterDialog() {
     );
   }
 
-  // Estado idle: no renderizar nada (el Snackbar de check manual se muestra desde App)
-  return (
-    <Snackbar
-      open={snack.open}
-      autoHideDuration={3500}
-      onClose={() => setSnack((s) => ({ ...s, open: false }))}
-    >
-      <Alert severity={snack.severity} onClose={() => setSnack((s) => ({ ...s, open: false }))}>
-        {snack.message}
-      </Alert>
-    </Snackbar>
-  );
+  // Estado idle: no hay nada que mostrar
+  return null;
 }

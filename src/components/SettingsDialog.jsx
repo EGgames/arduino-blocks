@@ -279,6 +279,7 @@ export default function SettingsDialog({ open, onClose, settings, onSettingsChan
               <Tooltip title={loadingPorts ? 'Buscando…' : 'Actualizar puertos'}>
                 <span>
                   <IconButton size="small" onClick={refreshPorts} disabled={loadingPorts}
+                    aria-label="Actualizar puertos"
                     sx={{ color: '#4fc3f7', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 1 }}>
                     <RefreshIcon fontSize="small"
                       sx={{ animation: loadingPorts ? 'spin 1s linear infinite' : 'none' }} />

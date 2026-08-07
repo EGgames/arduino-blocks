@@ -70,6 +70,19 @@
             <version>1.10.2</version>
             <scope>test</scope>
         </dependency>
+
+        <!--
+          JUnit 4 en el classpath: el reporter de Serenity lo necesita para resolver
+          las etiquetas de filtrado al procesar los "Ejemplos" de un Esquema del
+          escenario (SerenityReporterParallel#getCucumberRuntimeTags). Sin esta
+          dependencia los escenarios pasan pero el informe lanza NoClassDefFoundError.
+        -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>

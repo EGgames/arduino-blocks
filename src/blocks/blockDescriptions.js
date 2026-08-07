@@ -340,6 +340,369 @@ export const BLOCK_DESCRIPTIONS = {
       'Asigna un valor en la posición indicada del array.',
     code: 'miArray[0] = 42;\nmiArray[i] = analogRead(A0);',
   },
+
+  // ── Constantes enchufables ────────────────────────────────
+  arduino_digital_state: {
+    title: '🔛  HIGH / LOW',
+    description:
+      'Constante de nivel digital: HIGH equivale a 1 (5 V) y LOW a 0 (0 V). Al ser un bloque de valor, se puede enchufar donde haga falta o sustituir por una variable.',
+    code: 'digitalWrite(13, HIGH);',
+    tip: 'Puedes arrastrar una variable encima para decidir el estado en tiempo de ejecución.',
+  },
+
+  arduino_analog_pin: {
+    title: '🅰️  Pin analógico',
+    description: 'Constante de pin analógico (A0 a A15) para usar con analogRead().',
+    code: 'int valor = analogRead(A0);',
+    tip: 'En la mayoría de placas UNO solo existen A0–A5.',
+  },
+
+  // ── Estructura ────────────────────────────────────────────
+  arduino_block_comment: {
+    title: '📝  Comentario /* */',
+    description: 'Comentario que puede ocupar varias líneas. No afecta al funcionamiento del programa.',
+    code: '/* Este texto es solo para el programador */',
+  },
+
+  arduino_define: {
+    title: '🏷️  #define',
+    description:
+      'Macro del preprocesador: sustituye un nombre por un valor antes de compilar. No ocupa memoria RAM.',
+    code: '#define LED_PIN 13',
+    tip: 'Colócalo fuera de setup/loop para que quede al inicio del sketch.',
+  },
+
+  arduino_struct_define: {
+    title: '🧱  struct',
+    description:
+      'Define una estructura: un tipo propio que agrupa varios datos relacionados bajo un mismo nombre.',
+    code: 'struct Punto { int x; int y; };\nPunto p;\np.x = 10;',
+    tip: 'Colócalo fuera de setup/loop.',
+  },
+
+  arduino_enum_define: {
+    title: '🔢  enum',
+    description:
+      'Define una enumeración: una lista de nombres con valor entero automático (0, 1, 2…). Hace el código mucho más legible.',
+    code: 'enum Color { ROJO, VERDE, AZUL };\nColor c = VERDE;',
+  },
+
+  arduino_raw_statement: {
+    title: '⌨️  Código libre (sentencia)',
+    description:
+      'Escribe una línea de C/C++ tal cual. Es la vía de escape para llamar a cualquier función que no tenga bloque propio.',
+    code: 'miLibreria.hacerAlgo(1, 2);',
+    tip: 'Si olvidas el «;» final el bloque lo añade automáticamente.',
+  },
+
+  arduino_raw_expression: {
+    title: '⌨️  Código libre (valor)',
+    description: 'Expresión C/C++ escrita a mano que devuelve un valor y se puede enchufar donde quieras.',
+    code: 'int x = miSensor.leer() * 2;',
+  },
+
+  // ── E/S avanzada ──────────────────────────────────────────
+  arduino_pulse_in: {
+    title: '📐  pulseIn',
+    description:
+      'Mide cuánto dura un pulso en un pin, en microsegundos. Es la base de los sensores de ultrasonido HC-SR04.',
+    code: 'long duracion = pulseIn(7, HIGH);\nint cm = duracion / 58;',
+  },
+
+  arduino_shift_out: {
+    title: '➡️  shiftOut',
+    description:
+      'Envía un byte bit a bit por un pin de datos usando otro pin de reloj. Se usa con registros de desplazamiento 74HC595 para ampliar salidas.',
+    code: 'shiftOut(11, 12, MSBFIRST, 0b10101010);',
+  },
+
+  arduino_shift_in: {
+    title: '⬅️  shiftIn',
+    description: 'Lee un byte bit a bit desde un registro de desplazamiento (74HC165).',
+    code: 'byte datos = shiftIn(11, 12, MSBFIRST);',
+  },
+
+  arduino_analog_reference: {
+    title: '🔋  analogReference',
+    description:
+      'Cambia la tensión de referencia usada por analogRead(). Con INTERNAL se gana precisión al medir señales pequeñas.',
+    code: 'analogReference(INTERNAL);',
+    tip: 'Tras cambiarla, descarta la primera lectura de analogRead().',
+  },
+
+  arduino_attach_interrupt: {
+    title: '⚡  attachInterrupt',
+    description:
+      'Ejecuta una función automáticamente cuando cambia el estado de un pin, sin importar qué esté haciendo el loop().',
+    code: 'attachInterrupt(digitalPinToInterrupt(2), contar, RISING);',
+    tip: 'La función de interrupción debe ser muy corta y las variables que comparta con el loop deben ser «volatile».',
+  },
+
+  arduino_detach_interrupt: {
+    title: '🚫  detachInterrupt',
+    description: 'Desactiva la interrupción asociada a un pin.',
+    code: 'detachInterrupt(digitalPinToInterrupt(2));',
+  },
+
+  arduino_interrupts_toggle: {
+    title: '🛑  interrupts / noInterrupts',
+    description:
+      'Habilita o deshabilita todas las interrupciones. Útil para proteger una sección crítica del código.',
+    code: 'noInterrupts();\ncontador = 0;\ninterrupts();',
+  },
+
+  // ── Tiempo ────────────────────────────────────────────────
+  arduino_micros: {
+    title: '⏱️  micros()',
+    description:
+      'Microsegundos transcurridos desde que arrancó la placa. Se desborda a los ~70 minutos.',
+    code: 'unsigned long t = micros();',
+  },
+
+  // ── Serial ────────────────────────────────────────────────
+  arduino_serial_print_base: {
+    title: '🔢  Serial.print con base',
+    description:
+      'Imprime un número en decimal, hexadecimal, binario u octal. Muy útil para depurar máscaras de bits.',
+    code: 'Serial.println(255, HEX); // FF\nSerial.println(255, BIN); // 11111111',
+  },
+
+  arduino_serial_println_empty: {
+    title: '↩️  Serial.println()',
+    description: 'Imprime solo un salto de línea, para separar bloques de mensajes.',
+    code: 'Serial.println();',
+  },
+
+  arduino_serial_write: {
+    title: '📤  Serial.write',
+    description:
+      'Envía datos en binario (bytes crudos) en lugar de texto. Se usa para hablar con otros dispositivos, no con humanos.',
+    code: 'Serial.write(65); // envía el byte 65, no el texto "65"',
+  },
+
+  arduino_serial_action: {
+    title: '🧹  Serial.flush / end',
+    description:
+      'flush() espera a que se termine de enviar todo lo pendiente; end() libera los pines RX/TX.',
+    code: 'Serial.flush();\nSerial.end();',
+  },
+
+  arduino_serial_read_value: {
+    title: '📥  Lecturas del Serial',
+    description:
+      'parseInt() y parseFloat() leen un número escrito en el monitor; peek() mira el siguiente byte sin consumirlo; readString() lee todo el texto disponible.',
+    code: 'int n = Serial.parseInt();\nString s = Serial.readString();',
+  },
+
+  arduino_serial_read_string_until: {
+    title: '📥  Serial.readStringUntil',
+    description: 'Lee texto del puerto serie hasta encontrar el carácter indicado (normalmente el salto de línea).',
+    code: 'String linea = Serial.readStringUntil(\'\\n\');',
+  },
+
+  arduino_serial_available: {
+    title: '📬  Serial.available',
+    description: 'Cuántos bytes hay esperando para leer en el puerto serie. Cero significa que no llegó nada.',
+    code: 'if (Serial.available() > 0) { int c = Serial.read(); }',
+  },
+
+  arduino_serial_read: {
+    title: '📨  Serial.read',
+    description: 'Lee y consume el siguiente byte recibido. Devuelve -1 si no hay datos.',
+    code: 'int c = Serial.read();',
+  },
+
+  // ── Control ───────────────────────────────────────────────
+  arduino_if_else_if: {
+    title: '🔀  if / else if / else',
+    description:
+      'Comprueba varias condiciones en orden y ejecuta solo la primera que se cumpla; si ninguna se cumple, ejecuta el «si no».',
+    code: 'if (t > 30) { … } else if (t > 20) { … } else { … }',
+  },
+
+  arduino_ternary: {
+    title: '❔  Operador ternario',
+    description:
+      'Elige entre dos valores según una condición, en una sola expresión: condición ? valorSi : valorNo.',
+    code: 'int velocidad = rapido ? 255 : 100;',
+  },
+
+  arduino_break: {
+    title: '⛔  break',
+    description: 'Sale inmediatamente del bucle o del switch en el que está.',
+    code: 'while (true) { if (parar) break; }',
+  },
+
+  arduino_continue: {
+    title: '⤴️  continue',
+    description: 'Salta el resto de la iteración actual y pasa a la siguiente vuelta del bucle.',
+    code: 'for (int i = 0; i <= 10; i++) { if (i % 2) continue; Serial.println(i); }',
+  },
+
+  // ── Variables ─────────────────────────────────────────────
+  arduino_compound_assign: {
+    title: '➕  Asignación compuesta',
+    description:
+      'Combina una operación con la asignación: «x += 5» es lo mismo que «x = x + 5», pero más corto.',
+    code: 'contador += 1;\nbrillo *= 2;\nflags |= 0b0001;',
+  },
+
+  arduino_increment: {
+    title: '🔼  ++ / --',
+    description: 'Suma o resta 1 a una variable. Es la forma habitual de avanzar un contador.',
+    code: 'i++;\ni--;',
+  },
+
+  arduino_array_declare_init: {
+    title: '📚  Array con valores',
+    description:
+      'Declara un array indicando directamente sus elementos; el tamaño se deduce de la lista.',
+    code: 'int notas[] = {262, 294, 330};',
+    tip: 'Con sizeof(notas)/sizeof(notas[0]) obtienes cuántos elementos tiene.',
+  },
+
+  arduino_sizeof: {
+    title: '📏  sizeof',
+    description: 'Tamaño en bytes que ocupa una variable, un array o un tipo.',
+    code: 'int n = sizeof(notas) / sizeof(notas[0]);',
+  },
+
+  // ── Matemáticas ───────────────────────────────────────────
+  arduino_min_max: {
+    title: '⚖️  min / max',
+    description: 'Devuelve el menor (min) o el mayor (max) de dos números.',
+    code: 'int seguro = min(valor, 255);',
+  },
+
+  arduino_random: {
+    title: '🎲  random',
+    description:
+      'Número pseudoaleatorio entre el mínimo (incluido) y el máximo (excluido).',
+    code: 'int dado = random(1, 7); // 1..6',
+    tip: 'Llama a randomSeed() en setup() para que la secuencia cambie en cada arranque.',
+  },
+
+  arduino_random_seed: {
+    title: '🌱  randomSeed',
+    description:
+      'Inicializa el generador aleatorio. Leer un pin analógico sin conectar da un valor distinto en cada encendido.',
+    code: 'randomSeed(analogRead(A0));',
+  },
+
+  arduino_cast: {
+    title: '🔄  Conversión de tipo',
+    description:
+      'Convierte un valor a otro tipo. Al pasar de float a int se pierde la parte decimal (se trunca).',
+    code: 'int entero = (int)(3.9); // 3',
+  },
+
+  // ── Bits ──────────────────────────────────────────────────
+  arduino_bit_read: {
+    title: '0️⃣  bitRead',
+    description: 'Devuelve el valor (0 o 1) del bit indicado de un número. El bit 0 es el menos significativo.',
+    code: 'int b = bitRead(valor, 3);',
+  },
+
+  arduino_bit_write: {
+    title: '✍️  bitWrite',
+    description: 'Escribe un 0 o un 1 en el bit indicado de una variable.',
+    code: 'bitWrite(flags, 2, 1);',
+  },
+
+  arduino_bit_set_clear: {
+    title: '🔧  bitSet / bitClear',
+    description: 'Pone a 1 (bitSet) o a 0 (bitClear) el bit indicado de una variable.',
+    code: 'bitSet(flags, 0);\nbitClear(flags, 0);',
+  },
+
+  arduino_bit: {
+    title: '2️⃣  bit(n)',
+    description: 'Devuelve el valor del bit n, es decir 2 elevado a n: bit(3) vale 8.',
+    code: 'byte mascara = bit(3); // 0b00001000',
+  },
+
+  arduino_byte_part: {
+    title: '🔪  lowByte / highByte',
+    description: 'Extrae el byte bajo o el byte alto de un valor de 16 bits.',
+    code: 'byte bajo = lowByte(1025);\nbyte alto = highByte(1025);',
+  },
+
+  // ── Texto ─────────────────────────────────────────────────
+  arduino_char: {
+    title: '🔤  Carácter',
+    description: "Literal de un solo carácter, entre comillas simples. Internamente es un número (su código ASCII).",
+    code: "char inicial = 'A'; // 65",
+  },
+
+  arduino_string_cast: {
+    title: '🔠  String(valor)',
+    description: 'Convierte un número (u otro valor) en texto para poder concatenarlo o mostrarlo.',
+    code: 'String msg = String(temperatura) + " grados";',
+  },
+
+  arduino_string_length: {
+    title: '📏  Longitud de texto',
+    description: 'Número de caracteres que tiene un String.',
+    code: 'int n = mensaje.length();',
+  },
+
+  arduino_string_concat: {
+    title: '🔗  Unir textos',
+    description: 'Concatena dos textos en uno solo.',
+    code: 'String saludo = String("Hola ") + String(nombre);',
+  },
+
+  arduino_string_substring: {
+    title: '✂️  Subcadena',
+    description: 'Extrae la porción de texto comprendida entre dos posiciones (la final no se incluye).',
+    code: 'String parte = texto.substring(0, 4);',
+  },
+
+  arduino_string_index_of: {
+    title: '🔎  Buscar en texto',
+    description: 'Posición de la primera aparición de un texto dentro de otro; devuelve -1 si no aparece.',
+    code: 'int pos = mensaje.indexOf("ON");',
+  },
+
+  arduino_string_char_at: {
+    title: '🔡  Carácter en posición',
+    description: 'Devuelve el carácter que hay en la posición indicada del texto (empezando en 0).',
+    code: "char c = mensaje.charAt(0);",
+  },
+
+  arduino_string_to_number: {
+    title: '🔢  Texto a número',
+    description: 'Convierte un texto en número entero (toInt) o decimal (toFloat).',
+    code: 'int n = entrada.toInt();',
+  },
+
+  arduino_string_transform: {
+    title: '🔧  Transformar texto',
+    description:
+      'Pasa el texto a mayúsculas o minúsculas, o le quita los espacios de los extremos. Modifica la variable original.',
+    code: 'comando.trim();\ncomando.toUpperCase();',
+  },
+
+  arduino_string_compare: {
+    title: '🟰  Comparar textos',
+    description:
+      'Comprueba si dos textos son iguales, o si uno empieza o termina por otro. Con Strings no se puede usar «==» de forma fiable.',
+    code: 'if (comando.equals("ON")) { … }',
+  },
+
+  arduino_char_check: {
+    title: '🔍  Tipo de carácter',
+    description: 'Comprueba si un carácter es un dígito, una letra, un espacio, etc.',
+    code: 'if (isDigit(c)) { … }',
+  },
+
+  // ── Audio ─────────────────────────────────────────────────
+  arduino_tone_duration: {
+    title: '🎵  tone con duración',
+    description:
+      'Genera un tono durante un tiempo determinado y luego lo detiene solo, sin bloquear el programa.',
+    code: 'tone(8, 440, 500); // La durante medio segundo',
+  },
 };
 
 // ──────────────────────────────────────────────────────────────────────────────

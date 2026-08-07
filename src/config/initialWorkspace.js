@@ -10,16 +10,22 @@ export const INITIAL_XML = `
         <field name="BAUD">9600</field>
         <next>
           <block type="arduino_pin_mode">
-            <field name="PIN">13</field>
             <field name="MODE">OUTPUT</field>
+            <value name="PIN">
+              <shadow type="math_number"><field name="NUM">13</field></shadow>
+            </value>
           </block>
         </next>
       </block>
     </statement>
     <statement name="LOOP">
       <block type="arduino_digital_write">
-        <field name="PIN">13</field>
-        <field name="VALUE">HIGH</field>
+        <value name="PIN">
+          <shadow type="math_number"><field name="NUM">13</field></shadow>
+        </value>
+        <value name="VALUE">
+          <shadow type="arduino_digital_state"><field name="STATE">HIGH</field></shadow>
+        </value>
         <next>
           <block type="arduino_delay">
             <value name="MS">
@@ -27,8 +33,12 @@ export const INITIAL_XML = `
             </value>
             <next>
               <block type="arduino_digital_write">
-                <field name="PIN">13</field>
-                <field name="VALUE">LOW</field>
+                <value name="PIN">
+                  <shadow type="math_number"><field name="NUM">13</field></shadow>
+                </value>
+                <value name="VALUE">
+                  <shadow type="arduino_digital_state"><field name="STATE">LOW</field></shadow>
+                </value>
                 <next>
                   <block type="arduino_delay">
                     <value name="MS">

@@ -1,4 +1,5 @@
 import * as Blockly from 'blockly';
+import { GENERATED_LIBRARY_BLOCKS } from './librarySpecs';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Definiciones de bloques por librería Arduino
@@ -14,7 +15,7 @@ import * as Blockly from 'blockly';
 //     toolbox    → { fields?, inputs? } valores por defecto en el panel toolbox
 // ──────────────────────────────────────────────────────────────────────────────
 
-export const LIBRARY_BLOCKS = {
+const HANDMADE_LIBRARY_BLOCKS = {
 
   // ── DHT (temperatura/humedad) ──────────────────────────────────────────────
   DHT: {
@@ -1357,6 +1358,12 @@ export const LIBRARY_BLOCKS = {
     ],
   },
 };
+
+/**
+ * Catálogo completo: bloques escritos a mano + bloques generados a partir de
+ * especificaciones declarativas. Cubre todas las librerías de ARDUINO_LIBRARIES.
+ */
+export const LIBRARY_BLOCKS = { ...HANDMADE_LIBRARY_BLOCKS, ...GENERATED_LIBRARY_BLOCKS };
 
 // ── Registro en Blockly ────────────────────────────────────────────────────────
 
