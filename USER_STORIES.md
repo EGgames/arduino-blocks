@@ -376,6 +376,87 @@
 
 ---
 
+---
+
+## Épica 9 — Cobertura completa del lenguaje (v1.3)
+
+### HU-28 · Catálogo completo de bloques Arduino y C/C++
+
+> **Como** maker,  
+> **quiero** que exista un bloque para cada instrucción habitual de Arduino y de C/C++,  
+> **para** escribir cualquier sketch sin tener que bajar al editor de texto.
+
+**Criterios de aceptación:**
+- La caja de herramientas agrupa el lenguaje en al menos 14 categorías.
+- Hay bloques para E/S avanzada (`pulseIn`, `shiftOut`/`shiftIn`, `analogReference`), interrupciones
+  (`attachInterrupt`, `detachInterrupt`, `interrupts`/`noInterrupts`), utilidades del puerto serie
+  (`write`, `flush`, `end`, `parseInt`, `readStringUntil`, impresión en HEX/BIN), operadores de bits
+  (`bitRead`, `bitWrite`, `bitSet`/`bitClear`, `bit`, `lowByte`/`highByte`), conversión de tipo,
+  `sizeof`, operador ternario, `if/else if/else`, `min`/`max`, `random`/`randomSeed`, funciones de
+  `String` y de caracteres, `struct`, `enum` y comentarios de bloque.
+- Existe un bloque de código libre (como sentencia y como expresión) para cualquier API no cubierta.
+- Todo bloque del toolbox genera código C++ válido y tiene descripción educativa en el panel de ayuda.
+
+---
+
+### HU-29 · Variables con nombre en cualquier hueco de valor
+
+> **Como** estudiante,  
+> **quiero** poner nombre a mis variables y usarlas donde va un valor (pines, límites, parámetros),  
+> **para** no repetir números mágicos y entender mejor mi programa.
+
+**Criterios de aceptación:**
+- Los nombres de variable se validan como identificadores C: se sanean los caracteres inválidos
+  y se rechazan las palabras reservadas del lenguaje.
+- Los pines de `pinMode`, `digitalWrite`, `digitalRead`, `analogWrite`, `analogRead`, `tone` y
+  `noTone` son huecos de valor donde se puede enchufar un bloque de variable.
+- El estado HIGH/LOW y el pin analógico A0–A15 son bloques de valor sustituibles por variables.
+- Los límites del bucle `for` (desde, hasta, paso) aceptan variables.
+- Los workspaces guardados con el formato anterior se migran automáticamente al abrirlos.
+
+---
+
+### HU-30 · Todas las librerías se traducen a bloques
+
+> **Como** docente,  
+> **quiero** que cualquier librería del catálogo aporte sus propios bloques al incluirla,  
+> **para** poder dar clase con cualquier componente sin escribir código a mano.
+
+**Criterios de aceptación:**
+- Cada librería de `ARDUINO_LIBRARIES` tiene su categoría de bloques.
+- Al añadir un `#include`, la categoría de esa librería aparece en la caja de herramientas.
+- Una librería desconocida obtiene bloques genéricos (declaración global, llamada y valor).
+- El código de una librería se convierte en bloques sin perder los argumentos originales.
+
+---
+
+### HU-31 · Identificación de la versión
+
+> **Como** usuario,  
+> **quiero** ver la versión de la aplicación en la barra de estado,  
+> **para** saber si dispongo de las últimas funcionalidades.
+
+**Criterios de aceptación:**
+- La barra de estado muestra «Arduino Blocks IDE v1.3.0».
+- La barra de estado indica el estado de sincronización bloques ↔ código.
+
+---
+
+### HU-32 · El modo Niño y el modo Avanzado comparten el mismo programa
+
+> **Como** docente,  
+> **quiero** que al cambiar de modo solo cambie la presentación y no el proyecto,  
+> **para** poder mostrar el mismo programa a alumnos de distinto nivel.
+
+**Criterios de aceptación:**
+- Cambiar de modo no carga otro proyecto: se conserva el workspace que hay en pantalla.
+- Los bloques se traducen a su equivalente del otro modo (`arduino_*` ↔ `kids_*`) y el código
+  C++ generado es exactamente el mismo antes y después del cambio.
+- Los bloques sin equivalente exacto (`Serial.begin` a otra velocidad, un pin que es una
+  expresión, un tipo de dato que el modo Niño no ofrece, `bitRead`…) se conservan tal cual y
+  siguen funcionando.
+- El modo Niño ofrece las mismas acciones de archivo que el modo Avanzado: guardar, nuevo y abrir.
+
 ## Resumen
 
 | ID | Épica | Prioridad |
@@ -388,5 +469,6 @@
 | HU-20 a HU-21 | Gestión de archivos | Media |
 | HU-22 a HU-25 | Apariencia y configuración | Media |
 | HU-26 a HU-27 | Bloques personalizados | Baja |
+| HU-28 a HU-32 | Cobertura completa del lenguaje y modos (v1.3) | Alta |
 
-**Total: 27 historias de usuario**
+**Total: 32 historias de usuario**

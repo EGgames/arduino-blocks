@@ -75,9 +75,10 @@ function tokenize(code) {
     // Número
     if (/[0-9]/.test(code[i])) {
       let num = '';
+      let isHex = false;
       // Hex: 0x...
       if (code[i] === '0' && (code[i + 1] === 'x' || code[i + 1] === 'X')) {
-        num = '0x';
+        isHex = true;
         i += 2;
         while (i < code.length && /[0-9a-fA-F]/.test(code[i])) num += code[i++];
       } else {
@@ -85,7 +86,8 @@ function tokenize(code) {
       }
       // Sufijos L/U/F
       while (i < code.length && /[lLuUfF]/.test(code[i])) i++;
-      tokens.push({ type: 'NUMBER', value: parseFloat(num) || 0 });
+      const value = isHex ? parseInt(num, 16) : parseFloat(num);
+      tokens.push({ type: 'NUMBER', value: Number.isFinite(value) ? value : 0, hex: isHex });
       continue;
     }
 
@@ -305,8 +307,11 @@ class Parser {
       return this.parseVarDecl();
     }
 
-    // Sentencia de expresión (asignación, llamada, etc.)
-    if (this.match('IDENT') || this.match('NUMBER') || this.match('LPAREN')) {
+    // Sentencia de expresión (asignación, llamada, incremento prefijo, etc.)
+    if (
+      this.match('IDENT') || this.match('NUMBER') || this.match('LPAREN') ||
+      (this.match('OP') && ['++', '--', '!', '~', '-'].includes(this.peek().value))
+    ) {
       return this.parseExprStatement();
     }
 
@@ -494,8 +499,28 @@ class Parser {
   }
 
   parseAnd() {
+    let left = this.parseBitOr();
+    while (this.eat('OP', '&&')) left = { type: 'binop', op: '&&', left, right: this.parseBitOr() };
+    return left;
+  }
+
+  // Precedencia de C: || < && < | < ^ < & < ==/!= < relacionales < <</>> < +- < */%
+
+  parseBitOr() {
+    let left = this.parseBitXor();
+    while (this.eat('OP', '|')) left = { type: 'binop', op: '|', left, right: this.parseBitXor() };
+    return left;
+  }
+
+  parseBitXor() {
+    let left = this.parseBitAnd();
+    while (this.eat('OP', '^')) left = { type: 'binop', op: '^', left, right: this.parseBitAnd() };
+    return left;
+  }
+
+  parseBitAnd() {
     let left = this.parseEq();
-    while (this.eat('OP', '&&')) left = { type: 'binop', op: '&&', left, right: this.parseEq() };
+    while (this.eat('OP', '&')) left = { type: 'binop', op: '&', left, right: this.parseEq() };
     return left;
   }
 
@@ -509,8 +534,17 @@ class Parser {
   }
 
   parseCmp() {
-    let left = this.parseAdd();
+    let left = this.parseShift();
     while (this.match('OP') && ['<', '>', '<=', '>='].includes(this.peek().value)) {
+      const op = this.consume().value;
+      left = { type: 'binop', op, left, right: this.parseShift() };
+    }
+    return left;
+  }
+
+  parseShift() {
+    let left = this.parseAdd();
+    while (this.match('OP') && (this.peek().value === '<<' || this.peek().value === '>>')) {
       const op = this.consume().value;
       left = { type: 'binop', op, left, right: this.parseAdd() };
     }
@@ -537,6 +571,7 @@ class Parser {
 
   parseUnary() {
     if (this.eat('OP', '!'))  return { type: 'unop', op: '!',    operand: this.parseUnary() };
+    if (this.eat('OP', '~'))  return { type: 'unop', op: '~',    operand: this.parseUnary() };
     if (this.eat('OP', '-'))  return { type: 'unop', op: 'neg',  operand: this.parseUnary() };
     if (this.eat('OP', '++')) return { type: 'unop', op: '++pre',operand: this.parsePrimary() };
     if (this.eat('OP', '--')) return { type: 'unop', op: '--pre',operand: this.parsePrimary() };

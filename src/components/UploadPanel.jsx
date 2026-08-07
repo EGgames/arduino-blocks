@@ -146,8 +146,8 @@ export default function UploadPanel({ code, defaultPort = '', defaultBoard = 'ar
 
         {/* Placa */}
         <FormControl size="small" fullWidth>
-          <InputLabel>Placa</InputLabel>
-          <Select value={selectedBoard} label="Placa" onChange={(e) => setSelectedBoard(e.target.value)}>
+          <InputLabel id="upload-board-label">Placa</InputLabel>
+          <Select labelId="upload-board-label" id="upload-board" value={selectedBoard} label="Placa" onChange={(e) => setSelectedBoard(e.target.value)}>
             {BOARDS.map((b) => (
               <MenuItem key={b.fqbn} value={b.fqbn}>{b.label}</MenuItem>
             ))}
@@ -178,6 +178,16 @@ export default function UploadPanel({ code, defaultPort = '', defaultBoard = 'ar
             </span>
           </Tooltip>
         </Box>
+
+        {/* Avisos (detección de puerto Web Serial) */}
+        <Snackbar
+          open={snack.open}
+          autoHideDuration={4000}
+          onClose={() => setSnack((s) => ({ ...s, open: false }))}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert severity={snack.severity} variant="filled">{snack.message}</Alert>
+        </Snackbar>
       </WebWrapper>
     );
   }
@@ -197,8 +207,8 @@ export default function UploadPanel({ code, defaultPort = '', defaultBoard = 'ar
 
         {/* Placa */}
         <FormControl size="small" fullWidth>
-          <InputLabel>Placa</InputLabel>
-          <Select value={selectedBoard} label="Placa" onChange={(e) => setSelectedBoard(e.target.value)}>
+          <InputLabel id="upload-board-label">Placa</InputLabel>
+          <Select labelId="upload-board-label" id="upload-board" value={selectedBoard} label="Placa" onChange={(e) => setSelectedBoard(e.target.value)}>
             {BOARDS.map((b) => (
               <MenuItem key={b.fqbn} value={b.fqbn}>{b.label}</MenuItem>
             ))}
@@ -208,8 +218,8 @@ export default function UploadPanel({ code, defaultPort = '', defaultBoard = 'ar
         {/* Puerto */}
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           <FormControl size="small" sx={{ flex: 1 }}>
-            <InputLabel>Puerto COM</InputLabel>
-            <Select value={selectedPort} label="Puerto COM" onChange={(e) => setSelectedPort(e.target.value)}>
+            <InputLabel id="upload-port-label">Puerto COM</InputLabel>
+            <Select labelId="upload-port-label" id="upload-port" value={selectedPort} label="Puerto COM" onChange={(e) => setSelectedPort(e.target.value)}>
               {ports.length === 0
                 ? <MenuItem value="" disabled>Sin puertos detectados</MenuItem>
                 : ports.map((p) => (

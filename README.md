@@ -1,8 +1,9 @@
 # Arduino Blocks
 
 [![CI — Unit + Integration + E2E Tests](https://github.com/EGgames/arduino-blocks/actions/workflows/ci.yml/badge.svg)](https://github.com/EGgames/arduino-blocks/actions/workflows/ci.yml)
-![Jest](https://img.shields.io/badge/Jest-261%20tests-brightgreen)
-![Serenity BDD](https://img.shields.io/badge/Serenity%20BDD-48%2F48%20E2E-brightgreen)
+![Jest](https://img.shields.io/badge/Jest-1896%20tests-brightgreen)
+![Serenity BDD](https://img.shields.io/badge/Serenity%20BDD-104%2F104%20E2E-brightgreen)
+![Cobertura](https://img.shields.io/badge/cobertura-98%25%20sentencias-brightgreen)
 ![React](https://img.shields.io/badge/React-18.2-61DAFB?logo=react)
 ![Electron](https://img.shields.io/badge/Electron-27-47848F?logo=electron)
 ![License](https://img.shields.io/badge/license-MIT-blue)
@@ -15,11 +16,13 @@ Funciona como **aplicación web** y como **aplicación de escritorio** (Electron
 
 ## Características
 
-- Editor visual por bloques (Blockly) con ~30 bloques Arduino
+- Editor visual por bloques (Blockly) con más de 100 bloques que cubren Arduino y C/C++
 - Sincronización bidireccional en tiempo real: bloques ↔ código C++
 - Compilación y subida a la placa via **arduino-cli**
-- Gestor de librerías con 55+ entradas y búsqueda/filtro
+- Gestor de librerías con 55+ entradas: **todas** aportan sus propios bloques al incluirlas
+- Variables con nombre enchufables en cualquier hueco de valor (pines, límites de bucle, parámetros)
 - Bloques personalizados (experimental)
+- Modo Niño y modo Avanzado sobre el MISMO proyecto: cambiar de modo solo traduce los bloques
 - Temas oscuro / claro / sistema
 - Funciona como app web y como app de escritorio (Electron)
 - Configuración persistente: puerto COM, placa, fuente, tema
@@ -74,16 +77,21 @@ npm run electron-build
 
 | Categoría | Bloques |
 |-----------|---------|
-| ⚙️ Estructura | setup/loop, comentario |
-| 📌 Pines Digitales | pinMode, digitalWrite, digitalRead |
-| 📊 Pines Analógicos | analogWrite, analogRead, map, constrain |
-| ⏱️ Tiempo | delay, delayMicroseconds, millis |
-| 📡 Serial | Serial.begin, Serial.print, Serial.println |
-| 🔁 Control | if/else, for, while |
-| 📦 Variables | declarar, leer, asignar |
-| 🔢 Matemáticas | operaciones, trigonometría |
-| ✔️ Lógica | comparaciones, AND/OR/NOT |
-| 🔊 Audio | tone, noTone |
+| ⚙️ Estructura | setup/loop, comentario de línea y de bloque, #define, #include, struct, enum, código libre |
+| 📌 Pines Digitales | pinMode, digitalWrite, digitalRead, HIGH/LOW, pulseIn, shiftOut, shiftIn |
+| 📊 Pines Analógicos | analogWrite, analogRead, pin A0–A15, analogReference, map, constrain |
+| ⚡ Interrupciones | attachInterrupt, detachInterrupt, interrupts/noInterrupts |
+| ⏱️ Tiempo | delay, delayMicroseconds, millis, micros |
+| 📡 Serial | begin, print, println, print con base, write, flush/end, available, read, parseInt/parseFloat/peek/readString, readStringUntil |
+| 🔁 Control | if, if/else, if/else if/else, ternario, for, while, do-while, switch/case, break, continue |
+| 📦 Variables | declarar, leer, asignar, asignación compuesta, ++/--, global (static/volatile), const, arrays, sizeof |
+| 🔢 Matemáticas | operaciones, trigonometría, módulo, min/max, random/randomSeed, conversión de tipo |
+| 🔟 Bits | AND/OR/XOR, desplazamientos, NOT, bitRead, bitWrite, bitSet/bitClear, bit, lowByte/highByte |
+| ✔️ Lógica | comparaciones, AND/OR/NOT, booleanos |
+| 🔤 Texto | texto, carácter, String(), longitud, unir, subcadena, buscar, charAt, toInt/toFloat, mayúsculas/minúsculas/trim, comparar, tipo de carácter |
+| 🔊 Audio | tone, tone con duración, noTone |
+| 🔧 Funciones | definir, llamar (sentencia y valor), return |
+| 📚 Librerías | una categoría por librería incluida (55+), más bloques genéricos para librerías propias |
 
 ## 🏗️ Arquitectura
 
@@ -110,9 +118,9 @@ e2e/          # Suite E2E (Maven / Serenity BDD)
       hooks/       # Hooks de Serenity
       runner/      # JUnit Suite runner
     resources/features/
-      HU01_*.feature   # 8 feature files · 48 escenarios
+      HU01_*.feature   # 14 feature files · 104 escenarios
 .github/workflows/
-  ci.yml        # CI: Jest (261 tests) + E2E (48 escenarios)
+  ci.yml        # CI: Jest (1896 tests) + E2E (104 escenarios)
 ```
 
 ## 🧪 Tests
@@ -124,10 +132,10 @@ e2e/          # Suite E2E (Maven / Serenity BDD)
 npm test
 
 # Con cobertura
-npm test -- --coverage --watchAll=false
+npm run test:coverage   # umbral mínimo del 90 % configurado en package.json
 ```
 
-261 tests · 100 % de cobertura en los módulos probados.
+1896 tests · 98 % sentencias · 90 % ramas · 98 % funciones · 99 % líneas.
 
 ### E2E — Serenity BDD + Cucumber + WebDriver
 

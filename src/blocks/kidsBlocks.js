@@ -842,12 +842,24 @@ export function registerKidsGenerators(gen) {
   // (workspaceToCode lo maneja por separado)
   fb['kids_setup_loop'] = function () { return ''; };
 
-  // Pines
-  fb['kids_pin_mode']      = (b) => fb['arduino_pin_mode'](b);
-  fb['kids_digital_write'] = (b) => fb['arduino_digital_write'](b);
-  fb['kids_digital_read']  = (b) => fb['arduino_digital_read'](b);
-  fb['kids_analog_write']  = (b) => fb['arduino_analog_write'](b);
-  fb['kids_analog_read']   = (b) => fb['arduino_analog_read'](b);
+  // Pines — en modo Niño el pin es un CAMPO (no un hueco de valor) para
+  // simplificar la interfaz, por eso tienen generador propio.
+  fb['kids_pin_mode'] = (b) =>
+    `pinMode(${b.getFieldValue('PIN')}, ${b.getFieldValue('MODE')});\n`;
+
+  fb['kids_digital_write'] = (b) =>
+    `digitalWrite(${b.getFieldValue('PIN')}, ${b.getFieldValue('VALUE')});\n`;
+
+  fb['kids_digital_read'] = (b) =>
+    [`digitalRead(${b.getFieldValue('PIN')})`, gen.ORDER_ATOMIC];
+
+  fb['kids_analog_write'] = (b) => {
+    const value = gen.valueToCode(b, 'VALUE', gen.ORDER_NONE) || '0';
+    return `analogWrite(${b.getFieldValue('PIN')}, ${value});\n`;
+  };
+
+  fb['kids_analog_read'] = (b) =>
+    [`analogRead(A${b.getFieldValue('PIN')})`, gen.ORDER_ATOMIC];
 
   // Tiempo
   fb['kids_delay']         = (b) => fb['arduino_delay'](b);
@@ -861,14 +873,26 @@ export function registerKidsGenerators(gen) {
   // Control
   fb['kids_if_simple'] = (b) => fb['arduino_if_simple'](b);
   fb['kids_if']        = (b) => fb['arduino_if'](b);
-  fb['kids_for']       = (b) => fb['arduino_for'](b);
+  // kids_for usa campos numéricos en lugar de huecos de valor
+  fb['kids_for'] = (b) => {
+    const varName = b.getFieldValue('VAR') || 'i';
+    const from    = b.getFieldValue('FROM');
+    const to      = b.getFieldValue('TO');
+    const step    = b.getFieldValue('STEP');
+    const body    = gen.statementToCode(b, 'DO');
+    const op      = Number(step) < 0 ? '>=' : '<=';
+    return `for (int ${varName} = ${from}; ${varName} ${op} ${to}; ${varName} += ${step}) {\n${body}}\n`;
+  };
 
   // Comparación
   fb['kids_compare'] = (b) => fb['arduino_compare'](b);
 
-  // Sonido
-  fb['kids_tone']    = (b) => fb['arduino_tone'](b);
-  fb['kids_no_tone'] = (b) => fb['arduino_no_tone'](b);
+  // Sonido — el pin es un campo numérico en modo Niño
+  fb['kids_tone'] = (b) => {
+    const freq = gen.valueToCode(b, 'FREQ', gen.ORDER_NONE) || '440';
+    return `tone(${b.getFieldValue('PIN')}, ${freq});\n`;
+  };
+  fb['kids_no_tone'] = (b) => `noTone(${b.getFieldValue('PIN')});\n`;
 
   // Estructura extra
   fb['kids_comment'] = (b) => fb['arduino_comment'](b);

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   AppBar, Box, BottomNavigation, BottomNavigationAction,
-  Button, Chip, Divider, IconButton, Snackbar, Alert,
+  Button, Divider, IconButton, Snackbar, Alert,
   Tab, Tabs, Toolbar, Tooltip, Typography, useMediaQuery,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
 } from '@mui/material';
@@ -10,7 +10,6 @@ import SaveIcon from '@mui/icons-material/Save';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import CodeIcon from '@mui/icons-material/Code';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import UploadIcon from '@mui/icons-material/Upload';
@@ -341,7 +340,7 @@ export default function App() {
           )}
 
           {settings.mode === 'kids' && !isMobile && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mx: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mx: 1 }}>
               {['1️⃣ Arrastra bloques', '2️⃣ Conecta tu Arduino', '3️⃣ Presiona Subir'].map((step) => (
                 <Typography key={step} sx={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.9)', letterSpacing: 0.3 }}>
                   {step}
@@ -368,20 +367,33 @@ export default function App() {
 
           <Box sx={{ flex: 1 }} />
 
+          {/* Modo Niño: mismas acciones de archivo que el modo Avanzado,
+              con etiquetas y estilo pensados para el público infantil */}
           {settings.mode === 'kids' && (
-            <Tooltip title="Guardar mi programa [Ctrl+S]">
-              {isMobile ? (
-                <IconButton color="inherit" size="small" onClick={handleSave}
-                  sx={{ bgcolor: 'rgba(255,255,255,0.15)', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' }, mr: 0.5 }}>
-                  <SaveIcon fontSize="small" />
-                </IconButton>
-              ) : (
-                <Button color="inherit" startIcon={<SaveIcon />} size="small" onClick={handleSave}
-                  sx={{ borderRadius: 2, bgcolor: 'rgba(255,255,255,0.15)', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' }, fontSize: 12, mr: 1 }}>
-                  Guardar
-                </Button>
-              )}
-            </Tooltip>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mr: 1 }}>
+              {[
+                { key: 'nuevo',   label: 'Nuevo',   tooltip: 'Empezar un programa nuevo',        Icon: NoteAddIcon,    onClick: handleNewProjectRequest },
+                { key: 'abrir',   label: 'Abrir',   tooltip: 'Abrir un programa guardado (.ino)', Icon: FolderOpenIcon, onClick: handleOpenRequest },
+                { key: 'guardar', label: 'Guardar', tooltip: 'Guardar mi programa [Ctrl+S]',      Icon: SaveIcon,       onClick: handleSave },
+              ].map(({ key, label, tooltip, Icon, onClick }) => (
+                <Tooltip key={key} title={tooltip}>
+                  {isMobile ? (
+                    <IconButton color="inherit" size="small" onClick={onClick} aria-label={label}
+                      sx={{ bgcolor: 'rgba(255,255,255,0.15)', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}>
+                      <Icon fontSize="small" />
+                    </IconButton>
+                  ) : (
+                    <Button color="inherit" startIcon={<Icon />} size="small" onClick={onClick}
+                      sx={{
+                        borderRadius: 2, bgcolor: 'rgba(255,255,255,0.15)',
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' }, fontSize: 12,
+                      }}>
+                      {label}
+                    </Button>
+                  )}
+                </Tooltip>
+              ))}
+            </Box>
           )}
 
           {settings.mode !== 'kids' && !isMobile && (
@@ -805,7 +817,7 @@ export default function App() {
         </Box>
         <Box sx={{ flex: 1 }} />
         <Typography sx={{ fontSize: 'inherit', color: 'inherit', opacity: 0.4 }}>
-          Arduino Blocks IDE v1.2.3
+          Arduino Blocks IDE v1.3.0
         </Typography>
       </Box>
     </Box>

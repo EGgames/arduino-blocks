@@ -3,11 +3,11 @@
  * Convierte el AST producido por codeParser en XML para Blockly.
  *
  * Mapa de bloques (campo vs. valor según arduinoBlocks.js):
- *   arduino_pin_mode          PIN=field(num)  MODE=field(ident)
- *   arduino_digital_write     PIN=field(num)  VALUE=field(HIGH|LOW)
- *   arduino_digital_read      PIN=field(num)  → output
- *   arduino_analog_write      PIN=field(num)  VALUE=value(expr)
- *   arduino_analog_read       PIN=field(num)  → output
+ *   arduino_pin_mode          PIN=value(expr) MODE=field(ident)
+ *   arduino_digital_write     PIN=value(expr) VALUE=value(HIGH|LOW|expr)
+ *   arduino_digital_read      PIN=value(expr) → output
+ *   arduino_analog_write      PIN=value(expr) VALUE=value(expr)
+ *   arduino_analog_read       PIN=value(pin analógico) → output
  *   arduino_delay             MS=value(expr)
  *   arduino_delay_microseconds US=value(expr)
  *   arduino_serial_begin      BAUD=field(dropdown)
@@ -17,13 +17,13 @@
  *   arduino_variable_get      NAME=field  → output
  *   arduino_variable_set      NAME=field  VALUE=value(expr)
  *   arduino_if                CONDITION=value  DO=statement  ELSE=statement
- *   arduino_for               VAR=field  FROM=field  TO=field  STEP=field  DO=statement
+ *   arduino_for               VAR=field  FROM=value  TO=value  STEP=value  DO=statement
  *   arduino_while             CONDITION=value  DO=statement
  *   arduino_map               VALUE FROM_LOW FROM_HIGH TO_LOW TO_HIGH → output
  *   arduino_constrain         VALUE MIN MAX → output
  *   arduino_millis            → output
- *   arduino_tone              PIN=field  FREQ=value
- *   arduino_no_tone           PIN=field
+ *   arduino_tone              PIN=value  FREQ=value
+ *   arduino_no_tone           PIN=value
  *   arduino_comment           TEXT=field
  *   arduino_compare           OP=field  A=value  B=value  → output
  *   arduino_logic             OP=field  A=value  B=value  → output
@@ -114,13 +114,30 @@ function exprBlock(expr) {
 
     case 'call': {
       const { name, args } = expr;
-      if (name === 'digitalRead') return `<block type="arduino_digital_read" id="${nid()}"><field name="PIN">${numArg(args[0])}</field></block>`;
-      if (name === 'analogRead')  return `<block type="arduino_analog_read"  id="${nid()}"><field name="PIN">${numArg(args[0])}</field></block>`;
+      if (name === 'digitalRead') return `<block type="arduino_digital_read" id="${nid()}">${pinValue('PIN', args[0], 2)}</block>`;
+      if (name === 'analogRead')  return `<block type="arduino_analog_read"  id="${nid()}">${analogPinValue(args[0])}</block>`;
       if (name === 'millis')      return `<block type="arduino_millis" id="${nid()}"></block>`;
+      if (name === 'micros')      return `<block type="arduino_micros" id="${nid()}"></block>`;
       if (name === 'map')         return `<block type="arduino_map" id="${nid()}">${valueWrap('VALUE',args[0])}${valueWrap('FROM_LOW',args[1])}${valueWrap('FROM_HIGH',args[2])}${valueWrap('TO_LOW',args[3])}${valueWrap('TO_HIGH',args[4])}</block>`;
       if (name === 'constrain')   return `<block type="arduino_constrain" id="${nid()}">${valueWrap('VALUE',args[0])}${valueWrap('MIN',args[1])}${valueWrap('MAX',args[2])}</block>`;
-      // Llamada desconocida → bloque arduino_function_call_expr
-      return `<block type="arduino_function_call_expr" id="${nid()}"><field name="NAME">${esc(name)}</field></block>`;
+      if (name === 'min' || name === 'max')
+        return `<block type="arduino_min_max" id="${nid()}"><field name="FN">${name}</field>${valueWrap('A',args[0])}${valueWrap('B',args[1])}</block>`;
+      if (name === 'random' && args.length >= 2)
+        return `<block type="arduino_random" id="${nid()}">${valueWrap('MIN',args[0])}${valueWrap('MAX',args[1])}</block>`;
+      if (name === 'bitRead')
+        return `<block type="arduino_bit_read" id="${nid()}">${valueWrap('VALUE',args[0])}${valueWrap('BIT',args[1])}</block>`;
+      if (name === 'bit')
+        return `<block type="arduino_bit" id="${nid()}">${valueWrap('N',args[0])}</block>`;
+      if (name === 'lowByte' || name === 'highByte')
+        return `<block type="arduino_byte_part" id="${nid()}"><field name="FN">${name}</field>${valueWrap('VALUE',args[0])}</block>`;
+      if (name === 'pulseIn')
+        return `<block type="arduino_pulse_in" id="${nid()}"><field name="STATE">${identArg(args[1],'HIGH') === 'LOW' ? 'LOW' : 'HIGH'}</field>${pinValue('PIN',args[0],7)}</block>`;
+      if (name === 'Serial.available') return `<block type="arduino_serial_available" id="${nid()}"></block>`;
+      if (name === 'Serial.read')      return `<block type="arduino_serial_read" id="${nid()}"></block>`;
+      if (['Serial.parseInt','Serial.parseFloat','Serial.peek','Serial.readString'].includes(name))
+        return `<block type="arduino_serial_read_value" id="${nid()}"><field name="FN">${esc(name.slice(7))}</field></block>`;
+      // Llamada desconocida → bloque arduino_function_call_expr (conservando argumentos)
+      return `<block type="arduino_function_call_expr" id="${nid()}"><field name="NAME">${esc(name)}</field><field name="ARGS">${esc(argsToC(args))}</field></block>`;
     }
 
     default:
@@ -135,6 +152,36 @@ function numArg(expr, def = 0) {
   if (!expr) return def;
   if (expr.type === 'num') return expr.value;
   return def;
+}
+
+/**
+ * Genera `<value name="…">` para un pin: números literales como math_number,
+ * cualquier otra expresión (variable, constante, llamada) como su propio bloque,
+ * de modo que se pueda enchufar un bloque de variable en el hueco.
+ */
+function pinValue(name, expr, def = 13) {
+  if (!expr) return `<value name="${name}">${numBlock(def)}</value>`;
+  return `<value name="${name}">${exprBlock(expr)}</value>`;
+}
+
+/** `<value name="PIN">` para analogRead: usa el bloque de pin analógico A0…A15 */
+function analogPinValue(expr) {
+  const analogPin = (p) => `<block type="arduino_analog_pin" id="${nid()}"><field name="PIN">${esc(p)}</field></block>`;
+  if (!expr) return `<value name="PIN">${analogPin('A0')}</value>`;
+  if (expr.type === 'num')   return `<value name="PIN">${analogPin('A' + expr.value)}</value>`;
+  if (expr.type === 'ident' && /^A\d+$/.test(expr.name)) return `<value name="PIN">${analogPin(expr.name)}</value>`;
+  return `<value name="PIN">${exprBlock(expr)}</value>`;
+}
+
+/** `<value name="VALUE">` para digitalWrite: HIGH/LOW como bloque de estado digital */
+function digitalStateValue(expr) {
+  const stateBlock = (s) => `<block type="arduino_digital_state" id="${nid()}"><field name="STATE">${s}</field></block>`;
+  if (!expr) return `<value name="VALUE">${stateBlock('HIGH')}</value>`;
+  if (expr.type === 'ident' && (expr.name === 'HIGH' || expr.name === 'LOW')) {
+    return `<value name="VALUE">${stateBlock(expr.name)}</value>`;
+  }
+  if (expr.type === 'num') return `<value name="VALUE">${stateBlock(expr.value ? 'HIGH' : 'LOW')}</value>`;
+  return `<value name="VALUE">${exprBlock(expr)}</value>`;
 }
 
 /** Obtiene el nombre de un ident, o devuelve el default */
@@ -152,38 +199,56 @@ function clampBaud(v) {
   return String(opts.reduce((prev, cur) => (Math.abs(cur - n) < Math.abs(prev - n) ? cur : prev)));
 }
 
-/** Analiza la estructura de un for y extrae VAR, FROM, TO, STEP */
+const numExpr = (v) => ({ type: 'num', value: v });
+
+/**
+ * Analiza la estructura de un for y extrae VAR y las expresiones FROM/TO/STEP.
+ * Los límites pueden ser variables, no solo números: `for (int i = 0; i < n; i++)`.
+ */
 function analyzeFor(stmt) {
-  let varName = 'i', from = 0, to = 10, step = 1;
+  let varName = 'i';
+  let from = numExpr(0);
+  let to   = numExpr(10);
+  let step = numExpr(1);
 
   if (stmt.init?.type === 'vardecl') {
     varName = stmt.init.name || 'i';
-    from = stmt.init.value?.type === 'num' ? stmt.init.value.value : 0;
+    from = stmt.init.value || numExpr(0);
   } else if (stmt.init?.type === 'assign') {
     varName = stmt.init.target?.name || 'i';
-    from = stmt.init.value?.type === 'num' ? stmt.init.value.value : 0;
+    from = stmt.init.value || numExpr(0);
   }
 
   if (stmt.cond?.type === 'binop') {
-    const rhs = stmt.cond.right?.type === 'num' ? stmt.cond.right.value : 10;
+    const rhs = stmt.cond.right || numExpr(10);
+    const isNum = rhs.type === 'num';
+    // El bloque `for` genera `i <= TO`, así que hay que ajustar los límites
+    // estrictos (`<` y `>`) restando o sumando uno.
     switch (stmt.cond.op) {
-      case '<':  to = rhs - 1; break;
-      case '<=': to = rhs;     break;
-      case '>':  to = rhs + 1; break;
-      case '>=': to = rhs;     break;
-      default:   to = rhs;
+      case '<':
+        to = isNum ? numExpr(rhs.value - 1) : { type: 'binop', op: '-', left: rhs, right: numExpr(1) };
+        break;
+      case '>':
+        to = isNum ? numExpr(rhs.value + 1) : { type: 'binop', op: '+', left: rhs, right: numExpr(1) };
+        break;
+      default:
+        to = rhs;
     }
   }
 
   if (stmt.update) {
     const u = stmt.update;
     if (u.type === 'unop') {
-      if (u.op === '++post' || u.op === '++pre') step = 1;
-      if (u.op === '--post' || u.op === '--pre') step = -1;
+      if (u.op === '++post' || u.op === '++pre') step = numExpr(1);
+      if (u.op === '--post' || u.op === '--pre') step = numExpr(-1);
     } else if (u.type === 'assign') {
-      const delta = u.value?.type === 'num' ? u.value.value : 1;
+      const delta = u.value || numExpr(1);
       if (u.op === '+=') step = delta;
-      if (u.op === '-=') step = -delta;
+      if (u.op === '-=') {
+        step = delta.type === 'num'
+          ? numExpr(-delta.value)
+          : { type: 'unop', op: 'neg', operand: delta };
+      }
     }
   }
 
@@ -217,7 +282,7 @@ function stmtBlock(stmt) {
     case 'for': {
       const { varName, from, to, step } = analyzeFor(stmt);
       const bodyXml = chain(stmt.body.map(stmtBlock));
-      return `<block type="arduino_for" id="${nid()}"><field name="VAR">${esc(varName)}</field><field name="FROM">${esc(from)}</field><field name="TO">${esc(to)}</field><field name="STEP">${esc(step)}</field><statement name="DO">${bodyXml}</statement></block>`;
+      return `<block type="arduino_for" id="${nid()}"><field name="VAR">${esc(varName)}</field>${valueWrap('FROM', from)}${valueWrap('TO', to)}${valueWrap('STEP', step)}<statement name="DO">${bodyXml}</statement></block>`;
     }
 
     case 'while': {
@@ -293,13 +358,13 @@ function callOrAssignBlock(expr) {
 
   switch (name) {
     case 'pinMode':
-      return `<block type="arduino_pin_mode" id="${nid()}"><field name="PIN">${identArg(args[0], '13')}</field><field name="MODE">${modeArg(args[1])}</field></block>`;
+      return `<block type="arduino_pin_mode" id="${nid()}"><field name="MODE">${modeArg(args[1])}</field>${pinValue('PIN', args[0], 13)}</block>`;
 
     case 'digitalWrite':
-      return `<block type="arduino_digital_write" id="${nid()}"><field name="PIN">${identArg(args[0], '13')}</field><field name="VALUE">${highLowArg(args[1])}</field></block>`;
+      return `<block type="arduino_digital_write" id="${nid()}">${pinValue('PIN', args[0], 13)}${digitalStateValue(args[1])}</block>`;
 
     case 'analogWrite':
-      return `<block type="arduino_analog_write" id="${nid()}"><field name="PIN">${identArg(args[0], '9')}</field>${valueWrap('VALUE', args[1])}</block>`;
+      return `<block type="arduino_analog_write" id="${nid()}">${pinValue('PIN', args[0], 9)}${valueWrap('VALUE', args[1])}</block>`;
 
     case 'delay':
       return `<block type="arduino_delay" id="${nid()}">${valueWrap('MS', args[0])}</block>`;
@@ -310,21 +375,52 @@ function callOrAssignBlock(expr) {
     case 'Serial.begin':
       return `<block type="arduino_serial_begin" id="${nid()}"><field name="BAUD">${clampBaud(numArg(args[0], 9600))}</field></block>`;
 
-    case 'Serial.println':
-      return `<block type="arduino_serial_println" id="${nid()}">${valueWrap('TEXT', args[0])}</block>`;
-
     case 'Serial.print':
       return `<block type="arduino_serial_print" id="${nid()}">${valueWrap('TEXT', args[0])}</block>`;
 
     case 'tone':
-      return `<block type="arduino_tone" id="${nid()}"><field name="PIN">${numArg(args[0], 8)}</field>${valueWrap('FREQ', args[1])}</block>`;
+      if (args.length >= 3) {
+        return `<block type="arduino_tone_duration" id="${nid()}">${pinValue('PIN', args[0], 8)}${valueWrap('FREQ', args[1])}${valueWrap('DURATION', args[2])}</block>`;
+      }
+      return `<block type="arduino_tone" id="${nid()}">${pinValue('PIN', args[0], 8)}${valueWrap('FREQ', args[1])}</block>`;
 
     case 'noTone':
-      return `<block type="arduino_no_tone" id="${nid()}"><field name="PIN">${numArg(args[0], 8)}</field></block>`;
+      return `<block type="arduino_no_tone" id="${nid()}">${pinValue('PIN', args[0], 8)}</block>`;
+
+    case 'randomSeed':
+      return `<block type="arduino_random_seed" id="${nid()}">${valueWrap('SEED', args[0])}</block>`;
+
+    case 'analogReference':
+      return `<block type="arduino_analog_reference" id="${nid()}"><field name="REF">${esc(identArg(args[0], 'DEFAULT'))}</field></block>`;
+
+    case 'interrupts':
+    case 'noInterrupts':
+      return `<block type="arduino_interrupts_toggle" id="${nid()}"><field name="ACTION">${name}</field></block>`;
+
+    case 'Serial.write':
+      return `<block type="arduino_serial_write" id="${nid()}">${valueWrap('DATA', args[0])}</block>`;
+
+    case 'Serial.flush':
+    case 'Serial.end':
+      return `<block type="arduino_serial_action" id="${nid()}"><field name="ACTION">${esc(name.slice(7))}</field></block>`;
+
+    case 'Serial.println':
+      if (!args.length) return `<block type="arduino_serial_println_empty" id="${nid()}"></block>`;
+      return `<block type="arduino_serial_println" id="${nid()}">${valueWrap('TEXT', args[0])}</block>`;
+
+    case 'bitWrite':
+      return `<block type="arduino_bit_write" id="${nid()}"><field name="NAME">${esc(identArg(args[0], 'miVariable'))}</field>${valueWrap('BIT', args[1])}${valueWrap('VALUE', args[2])}</block>`;
+
+    case 'bitSet':
+    case 'bitClear':
+      return `<block type="arduino_bit_set_clear" id="${nid()}"><field name="FN">${name}</field><field name="NAME">${esc(identArg(args[0], 'miVariable'))}</field>${valueWrap('BIT', args[1])}</block>`;
+
+    case 'shiftOut':
+      return `<block type="arduino_shift_out" id="${nid()}"><field name="ORDER">${esc(identArg(args[2], 'MSBFIRST'))}</field>${pinValue('DATA', args[0], 11)}${pinValue('CLOCK', args[1], 12)}${valueWrap('VALUE', args[3])}</block>`;
 
     default:
-      // Llamada desconocida → bloque arduino_function_call
-      return `<block type="arduino_function_call" id="${nid()}"><field name="NAME">${esc(name)}</field></block>`;
+      // Llamada desconocida → bloque «llamar» conservando los argumentos originales
+      return `<block type="arduino_function_call" id="${nid()}"><field name="NAME">${esc(name)}</field><field name="ARGS">${esc(argsToC(args))}</field></block>`;
   }
 }
 
@@ -335,9 +431,37 @@ function modeArg(expr) {
   return 'OUTPUT';
 }
 
-function highLowArg(expr) {
-  const name = identArg(expr, 'LOW').toUpperCase();
-  return name === 'LOW' ? 'LOW' : 'HIGH';
+/**
+ * Renderiza una expresión del AST de vuelta a C++.
+ * Se usa para conservar los argumentos de llamadas que no tienen bloque propio
+ * (p. ej. `lcd.setCursor(0, 1)` → bloque «llamar» con ARGS = "0, 1").
+ */
+export function exprToC(expr) {
+  if (!expr) return '';
+  switch (expr.type) {
+    case 'num':   return String(expr.value);
+    case 'str':   return `"${String(expr.value).replace(/"/g, '\\"')}"`;
+    case 'bool':  return expr.value ? 'true' : 'false';
+    case 'ident': return expr.name;
+    case 'binop': return `${exprToC(expr.left)} ${expr.op} ${exprToC(expr.right)}`;
+    case 'unop': {
+      const operand = exprToC(expr.operand);
+      if (expr.op === 'neg')    return `-${operand}`;
+      if (expr.op === '++post') return `${operand}++`;
+      if (expr.op === '--post') return `${operand}--`;
+      if (expr.op === '++pre')  return `++${operand}`;
+      if (expr.op === '--pre')  return `--${operand}`;
+      return `${expr.op}${operand}`;
+    }
+    case 'assign': return `${exprToC(expr.target)} ${expr.op} ${exprToC(expr.value)}`;
+    case 'call':   return `${expr.name}(${(expr.args || []).map(exprToC).join(', ')})`;
+    default:       return '';
+  }
+}
+
+/** Argumentos de una llamada renderizados como texto C separados por comas */
+function argsToC(args) {
+  return (args || []).map(exprToC).filter((s) => s !== '').join(', ');
 }
 
 // ─── Punto de entrada ────────────────────────────────────────────────────────

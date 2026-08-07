@@ -302,3 +302,59 @@ describe('App — editor de código', () => {
     });
   });
 });
+
+// ─── Apertura de archivos en el navegador (HU-21) ─────────────────────────────
+
+describe('App — abrir archivo en modo web', () => {
+  /** Intercepta la creación del <input type="file"> que usa App */
+  function capturarInputArchivo() {
+    const original = document.createElement.bind(document);
+    const capturado = {};
+    jest.spyOn(document, 'createElement').mockImplementation((tag, opts) => {
+      const el = original(tag, opts);
+      if (tag === 'input') {
+        capturado.input = el;
+        el.click = jest.fn();
+      }
+      return el;
+    });
+    return capturado;
+  }
+
+  /** Fichero falso con contenido de texto */
+  const archivo = (texto) => ({ name: 'sketch.ino', text: () => Promise.resolve(texto) });
+
+  test('carga el contenido del archivo elegido y actualiza los bloques', async () => {
+    const capturado = capturarInputArchivo();
+    render(<App />);
+    fireEvent.click(screen.getByText('Abrir'));
+
+    expect(capturado.input.accept).toBe('.ino,.cpp,.c,.h');
+    await act(async () => {
+      await capturado.input.onchange({
+        target: { files: [archivo('void setup() {\n  pinMode(13, OUTPUT);\n}\nvoid loop() {}')] },
+      });
+    });
+    expect(await screen.findByText(/Archivo cargado: sketch.ino/)).toBeInTheDocument();
+  });
+
+  test('sin archivo seleccionado no hace nada', async () => {
+    const capturado = capturarInputArchivo();
+    render(<App />);
+    fireEvent.click(screen.getByText('Abrir'));
+    await act(async () => { await capturado.input.onchange({ target: { files: [] } }); });
+    expect(screen.queryByText(/Archivo cargado/)).not.toBeInTheDocument();
+  });
+
+  test('un archivo ilegible muestra un error', async () => {
+    const capturado = capturarInputArchivo();
+    render(<App />);
+    fireEvent.click(screen.getByText('Abrir'));
+    await act(async () => {
+      await capturado.input.onchange({
+        target: { files: [{ name: 'roto.ino', text: () => Promise.reject(new Error('E/S')) }] },
+      });
+    });
+    expect(await screen.findByText('Error al leer el archivo')).toBeInTheDocument();
+  });
+});

@@ -1,4 +1,4 @@
-﻿// ── Tutoriales Paso a Paso para Modo Niño ─────────────────────────────────────
+// ── Tutoriales Paso a Paso para Modo Niño ─────────────────────────────────────
 // Lista de tutoriales independientes. Al seleccionar uno se navega por sus pasos.
 import React, { useState } from 'react';
 import {
